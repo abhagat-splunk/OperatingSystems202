@@ -14,6 +14,8 @@ class Codechef
 		int numberOfModules = scanner.nextInt();
 		int currentBaseAddress = 0;
 		HashMap<String, Integer> definitions = new HashMap<String, Integer>();
+		ArrayList<String> programLines = new ArrayList<String>();
+		HashMap<String, Integer> SymbolTable = new HashMap<String, Integer>();
 		for(int x=0;x<numberOfModules;x++){
 			int numberOfDefinitions = scanner.nextInt();
 			for(int y=0;y<numberOfDefinitions;y++){
@@ -21,9 +23,8 @@ class Codechef
 			    int temp2;
 			    temp1 = scanner.next();
 			    temp2 = scanner.nextInt();
-			    definitions.put(temp1,temp2);
+			    SymbolTable.put(temp1,temp2+currentBaseAddress);
 			}
-            System.out.println(definitions);
             int numberOfUses = scanner.nextInt();
             Map<String, List<Integer>> uses = new HashMap<String, List<Integer>>();
             for(int y=0;y<numberOfUses;y++){
@@ -39,21 +40,13 @@ class Codechef
                 }
             System.out.println(uses);
             int numberOfProgramLines = scanner.nextInt();
-            HashMap<String, Integer> program = new HashMap<String, Integer>();
-            for(int y=0;y<numberOfProgramLines;y++){
-                
-                String temp1;
-			    int temp2;
-			    temp1 = scanner.next();
-			    temp2 = scanner.nextInt();
-			    program.put(temp1,temp2);
-                
-                
-            }
-		    System.out.println(program);
+            currentBaseAddress+=numberOfProgramLines;
+            if(numberOfProgramLines!=0)
+                programLines.add(scanner.nextLine());
 		    
-		}    
-	    
+		}
+	 System.out.println(programLines);	
+	 System.out.println(SymbolTable);   
 	}
 	
 }
