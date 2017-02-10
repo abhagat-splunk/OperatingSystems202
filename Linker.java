@@ -19,7 +19,11 @@ class Linker
 		HashMap<String, Integer> SymbolTable = new HashMap<String, Integer>();
 		ArrayList<String> MultipleDefinitions = new ArrayList<String>();
 		HashMap<String,Integer> UsedOrNot = new HashMap<String,Integer>();
+		HashMap<String,Integer> UseExceedModuleSize = new HashMap<String,Integer>();
+		ArrayList<String> DefinitionExceedModuleSize = new ArrayList<String>();
+		
 		for(int x=0;x<numberOfModules;x++){
+			ArrayList<String> CurrentDefinitions = new ArrayList<String>();
 			int numberOfDefinitions = scanner.nextInt();
 			for(int y=0;y<numberOfDefinitions;y++){
 			    String temp1;
@@ -30,6 +34,7 @@ class Linker
 			    	MultipleDefinitions.add(temp1);
 			    }
 			    else{
+			    CurrentDefinitions.add(temp1);
 			    SymbolTable.put(temp1,temp2+currentBaseAddress);
 			    UsedOrNot.put(temp1,x+1);
 				}
@@ -42,6 +47,7 @@ class Linker
                         uses.put(tempKey,new ArrayList<Integer>());
                     }
                 int tempVal = scanner.nextInt();
+                
                 while(tempVal!=-1){
                     uses.get(tempKey).add(tempVal);
                     tempVal = scanner.nextInt();
@@ -50,10 +56,31 @@ class Linker
             System.out.println(uses);    
             newUses.add(uses);
             int numberOfProgramLines = scanner.nextInt();
-            System.out.println(numberOfProgramLines);
+            //System.out.println(numberOfProgramLines);
             baseAddresses.add(currentBaseAddress);
-            currentBaseAddress+=numberOfProgramLines;
             
+            
+            for(String s:CurrentDefinitions){
+            	System.out.println(SymbolTable.get(s)-currentBaseAddress+1);
+            	System.out.println(numberOfProgramLines);
+            	if(SymbolTable.get(s)-currentBaseAddress>numberOfProgramLines-1){
+            		DefinitionExceedModuleSize.add(s);
+            		SymbolTable.put(s,currentBaseAddress);
+            	}
+            }
+            currentBaseAddress+=numberOfProgramLines;
+
+            for (String key : uses.keySet())
+        		{
+            		List values = uses.get(key);
+            		for(int q=0;q<values.size();q++){
+            			if ((Integer)values.get(q)>numberOfProgramLines){
+            				UseExceedModuleSize.put(key,x+1);
+      						break;
+            			}
+            		}
+            	}
+
             if(numberOfProgramLines!=0){
             	String s = "";
             	numberOfProgramLines=numberOfProgramLines*2;
@@ -77,6 +104,9 @@ class Linker
 	 	if (MultipleDefinitions.contains(tempKey)){
 	 		System.out.print(" Error: This variable is multiply defined; first value used.");
 	 	}
+	 	if(DefinitionExceedModuleSize.contains(tempKey)){
+	 		System.out.print(" Error: Definition exceeds module size; first word in module used.");
+	 	}
 	 	System.out.print("\n");
 	 	stringSymbolTable.put(tempKey,String.format("%03d",SymbolTable.get(tempKey)));
 	 }
@@ -94,9 +124,12 @@ class Linker
 	     for(int i=0;i<temparr.length;i+=2){
 	     	if(temparr[i].charAt(0)=='R'){
 	     		temparr[i+1]=Integer.toString(Integer.parseInt(temparr[i+1])+baseAddresses.get(counterSecond));
+	     		System.out.println(overAllCounter+": "+temparr[i+1]);
+	     		overAllCounter+=1;
 	     	}
-	     	if(temparr[i].charAt(0)=='E'){
+	     	else if(temparr[i].charAt(0)=='E'){
 	     		int findIndex = i/2;
+	     		int multipleCounter = 0;
 	     		//System.out.println("Find Index"+Integer.toString(i));
 	     		String findKey = "";
 	     		//System.out.println(findIndex);
@@ -108,40 +141,67 @@ class Linker
             			//System.out.print("Inside");
             			//System.out.println(values.get(q));
             			if((Integer)values.get(q)==findIndex){
-            				//System.out.println("WTF!");
-            				findKey = key;
+            				multipleCounter+=1;
+            				if(multipleCounter>1){
+            					UsedOrNot.put(key,-1);
+            					continue;
+            				}
             				UsedOrNot.put(key,-1);
-            				break;
+            				findKey = key;
+            				
             			}
             		}
             		//use key and value
         		}
-        		if(stringSymbolTable.containsKey(findKey))
-	     			temparr[i+1] = Character.toString(temparr[i+1].charAt(0))+stringSymbolTable.get(findKey);
+        		//System.out.println(findKey);
+        		if(multipleCounter>1){
+        			temparr[i+1] = Character.toString(temparr[i+1].charAt(0))+stringSymbolTable.get(findKey);
+        			System.out.print(overAllCounter+": "+temparr[i+1]);
+        			System.out.println(" Error: Multiple variables used in instruction; all but first ignored.");
+	     			overAllCounter+=1;
+	     			continue;
+        		}
+        		if(stringSymbolTable.containsKey(findKey)){
+        			temparr[i+1] = Character.toString(temparr[i+1].charAt(0))+stringSymbolTable.get(findKey);
+	     			System.out.println(overAllCounter+": "+temparr[i+1]);
+	     			overAllCounter+=1;
+	     			continue;
+	     		}
 	     		else{
 	     			temparr[i+1] = Character.toString(temparr[i+1].charAt(0))+"000";
 	     			System.out.print(overAllCounter+": "+temparr[i+1]);
 	     			System.out.println(" Error: "+findKey+" is not defined; zero used.");
+	     			overAllCounter+=1;
 	     			continue;
 	     		}
+	     	}
+
 	     		//System.out.println(temparr[i+1]);
 	     		//temparr[i+1]=Character.toString(temparr[i+1].charAt(0))+;
-	     	}
-	     	if(temparr[i].charAt(0)=='A'){
+	     	else if(temparr[i].charAt(0)=='A'){
 	     		if(Integer.parseInt(temparr[i+1].substring(1,4))>200){
 	     			temparr[i+1] = temparr[i+1].substring(0,1)+"000";
 	     			System.out.print(overAllCounter+": "+temparr[i+1]);
 	     			System.out.println(" Error: Absolute address exceeds machine size; zero used.");
+	     			overAllCounter+=1;
 	     			continue;
 	     		}
+	     		else{
+	     			System.out.println(overAllCounter+": "+temparr[i+1]);
+	     			overAllCounter+=1;
+	     			continue;
+	     		}
+	     	}
+	     	else{
+	     		System.out.println(overAllCounter+": "+temparr[i+1]);
+	     		overAllCounter+=1;
+	     		continue;
 	     	}	
-
-	     	System.out.println(overAllCounter+": "+temparr[i+1]);
-	     	overAllCounter+=1;
 	     }
 
 	     counterSecond+=1;
 	 }
+	System.out.print("\n"); 
 	Iterator<HashMap.Entry<String, Integer>> entriesThree =  UsedOrNot.entrySet().iterator();
 	while(entriesThree.hasNext()){
 		HashMap.Entry<String, Integer> entry = entriesThree.next();
@@ -149,7 +209,14 @@ class Linker
 	 	Integer tempVal = entry.getValue();
 	 	if(tempVal!=-1)
 	 		System.out.println("Warning: "+tempKey+" was defined in module "+Integer.toString(tempVal)+" but never used.");
-	}  
+	}
+	Iterator<HashMap.Entry<String, Integer>> entriesFour =  UseExceedModuleSize.entrySet().iterator();
+	while(entriesFour.hasNext()){
+		HashMap.Entry<String, Integer> entry = entriesFour.next();
+		String tempKey = entry.getKey();
+	 	Integer tempVal = entry.getValue();
+	 	System.out.println("Error: Use of "+tempKey+" in module "+tempVal+" exceeds module size; use ignored.");
+	}
 	}
 	
 }
