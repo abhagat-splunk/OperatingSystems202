@@ -92,7 +92,8 @@ class Linker
             //System.out.println(programLines);
 		}
 	 System.out.println("Symbol Table");
-	 Iterator<HashMap.Entry<String, Integer>> entries =  SymbolTable.entrySet().iterator();
+	 Map<String,Integer> ST = new TreeMap<String, Integer>(SymbolTable);
+	 Iterator<HashMap.Entry<String, Integer>> entries =  ST.entrySet().iterator();
 	 HashMap<String, String> stringSymbolTable = new HashMap<String, String>();
 	 while(entries.hasNext()){
 	 	HashMap.Entry<String, Integer> entry = entries.next();
@@ -206,8 +207,9 @@ class Linker
 
 	     counterSecond+=1;
 	 }
-	System.out.print("\n"); 
-	Iterator<HashMap.Entry<String, Integer>> entriesThree =  UsedOrNot.entrySet().iterator();
+	System.out.print("\n");
+	Map<String,Integer> UON = new TreeMap<String,Integer>(UsedOrNot);
+	Iterator<HashMap.Entry<String, Integer>> entriesThree =  UON.entrySet().iterator();
 	while(entriesThree.hasNext()){
 		HashMap.Entry<String, Integer> entry = entriesThree.next();
 		String tempKey = entry.getKey();
@@ -215,7 +217,8 @@ class Linker
 	 	if(tempVal!=-1)
 	 		System.out.println("Warning: "+tempKey+" was defined in module "+Integer.toString(tempVal)+" but never used.");
 	}
-	Iterator<HashMap.Entry<String, Integer>> entriesFour =  UseExceedModuleSize.entrySet().iterator();
+	Map<String,Integer> UEMS = new TreeMap<String,Integer>(UseExceedModuleSize);
+	Iterator<HashMap.Entry<String, Integer>> entriesFour =  UEMS.entrySet().iterator();
 	while(entriesFour.hasNext()){
 		HashMap.Entry<String, Integer> entry = entriesFour.next();
 		String tempKey = entry.getKey();
