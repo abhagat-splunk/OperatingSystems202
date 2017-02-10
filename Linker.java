@@ -21,7 +21,7 @@ class Linker
 		HashMap<String,Integer> UsedOrNot = new HashMap<String,Integer>();
 		HashMap<String,Integer> UseExceedModuleSize = new HashMap<String,Integer>();
 		ArrayList<String> DefinitionExceedModuleSize = new ArrayList<String>();
-		
+		ArrayList<Integer> ProgramLinesCount = new ArrayList<Integer>();
 		for(int x=0;x<numberOfModules;x++){
 			ArrayList<String> CurrentDefinitions = new ArrayList<String>();
 			int numberOfDefinitions = scanner.nextInt();
@@ -53,16 +53,14 @@ class Linker
                     tempVal = scanner.nextInt();
                 }
                 }
-            System.out.println(uses);    
+            //System.out.println(uses);    
             newUses.add(uses);
             int numberOfProgramLines = scanner.nextInt();
             //System.out.println(numberOfProgramLines);
             baseAddresses.add(currentBaseAddress);
-            
+            ProgramLinesCount.add(numberOfProgramLines);
             
             for(String s:CurrentDefinitions){
-            	System.out.println(SymbolTable.get(s)-currentBaseAddress+1);
-            	System.out.println(numberOfProgramLines);
             	if(SymbolTable.get(s)-currentBaseAddress>numberOfProgramLines-1){
             		DefinitionExceedModuleSize.add(s);
             		SymbolTable.put(s,currentBaseAddress);
@@ -110,6 +108,7 @@ class Linker
 	 	System.out.print("\n");
 	 	stringSymbolTable.put(tempKey,String.format("%03d",SymbolTable.get(tempKey)));
 	 }
+	 System.out.print("\n");
 	 
 	 int counterSecond = 0;
 	 int overAllCounter = 0;
@@ -123,6 +122,12 @@ class Linker
 	     //System.out.println(thisUses);   
 	     for(int i=0;i<temparr.length;i+=2){
 	     	if(temparr[i].charAt(0)=='R'){
+	     		if(Integer.parseInt(temparr[i+1].substring(1,4))>(ProgramLinesCount.get(counterSecond)-1)){
+	     			System.out.print(overAllCounter+": "+temparr[i+1].substring(0,1)+"000");
+	     			System.out.println(" Error: Relative address exceeds module size; zero used.");
+	     			overAllCounter+=1;
+	     			continue;
+	     		}
 	     		temparr[i+1]=Integer.toString(Integer.parseInt(temparr[i+1])+baseAddresses.get(counterSecond));
 	     		System.out.println(overAllCounter+": "+temparr[i+1]);
 	     		overAllCounter+=1;
