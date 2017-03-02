@@ -10,9 +10,9 @@ def main(lines,randomNumberCounter):
 	cpu_time_original = []
 	for x in xrange(1,len(inp),4):#Quadruples
 		"""
-		0:Process Number, 1:Arrival Time, 2:Interval Upper Limit, 3:CPU Time, 4:Multiplier, 5:IO Burst, 6:ReadyQueueTime, 7:FinishingTime, 8:TurnAroundTime, 9:IOTime, 10:ReadyQueueOverallTime
+		0:Process Number, 1:Arrival Time, 2:Interval Upper Limit, 3:CPU Time, 4:Multiplier, 5:IO Burst, 6:ReadyQueueTime, 7:FinishingTime, 8:TurnAroundTime, 9:IOTime, 10:ReadyQueueOverallTime. 11:QuantumTime
 		"""
-		processes.append([counter,inp[x],inp[x+1],inp[x+2],inp[x+3],-1,0,0,0,0,0]) #Process Number and parameters
+		processes.append([counter,inp[x],inp[x+1],inp[x+2],inp[x+3],-1,0,0,0,0,0,2]) #Process Number and parameters
 		cpu_time_original.append(inp[x+2])
 		counter+=1
 	"""Not needed here I guess, lets see. Status for debugging."""
@@ -68,7 +68,7 @@ def main(lines,randomNumberCounter):
 					running_process=-1		
 			if ready_queue:
 				#s = sorted(s, key = lambda x: (x[1], x[2]))
-				ready_queue.sort(key=lambda x:initial_processes[x][3])
+				ready_queue.sort(key=lambda x: (-initial_processes[x][6],initial_processes[x][1]))
 				running_process = ready_queue[0]
 				initial_processes[running_process][6]=0
 				process_status[running_process] = "running"
@@ -90,6 +90,7 @@ def main(lines,randomNumberCounter):
 				cpu_burst = t-1	
 		else:
 			cpu_burst-=1
+
 		for y in ready_queue:
 			initial_processes[y][6]+=1
 			initial_processes[y][10]+=1
@@ -122,6 +123,22 @@ def main(lines,randomNumberCounter):
 		#print temp_ready_unstarted_queue	
 		ready_queue.extend(temp_ready_unstarted_queue)
 		
+
+		"""Check if blocked processes have finished their IO Burst time"""
+		temp_ready_blocked_queue = []
+		if blocked:
+			for x in blocked:
+				if initial_processes[x][5]==0:
+					temp_ready_blocked_queue.append(x)
+					process_status[x] = "ready"
+				else:
+					initial_processes[x][5]-=1
+		for x in temp_ready_blocked_queue:
+			blocked.remove(x)
+		#print "Blocked to Ready queue"
+		#print temp_ready_blocked_queue
+		temp_ready_blocked_queue.sort(key=lambda x: process_arrival_index.index(x))	
+		ready_queue.extend(temp_ready_blocked_queue)
 		time_counter+=1
 	#print ready_queue
 	#print unstarted	
