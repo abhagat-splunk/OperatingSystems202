@@ -54,55 +54,50 @@ def main(lines,randomNumberCounter):
 		if cpu_burst==0:
 			#print "INSIDE IF"
 			if running_process>=0:
-				#print "LOL"	
+				print initial_processes[running_process][3]	
 				if initial_processes[running_process][3]==0:
 					terminating.append(running_process)
 					initial_processes[running_process][7] = time_counter-1
 					initial_processes[running_process][8] = initial_processes[running_process][7]-initial_processes[running_process][1]-offset_timeCounter
 					process_status[running_process] = "terminated"
-					ready_queue = ready_queue[1:]
 					running_process=-1
 				else: 
 					#print "BLOCKED!"
+					print initial_processes[running_process][5]
 					blocked.append(running_process)
 					process_status[running_process] = "blocked"
-					while initial_processes[running_process][5]!=0:
-						time_counter+=1
-						for y in ready_queue:
-							if y!=running_process:
-								initial_processes[y][6]+=1
-								initial_processes[y][10]+=1
-						initial_processes[running_process][5]-=1
-						print process_status
-					running_process=-1		
+					running_process=-1	
+						
 			if ready_queue:
 				#s = sorted(s, key = lambda x: (x[1], x[2]))
-				if initial_processes[running_process][3]==0:
-					ready_queue.sort(key=lambda x: initial_processes[x][3])
+				#ready_queue.sort(key=lambda x: (-initial_processes[x][6],initial_processes[x][1]))
+				ready_queue.sort(key=lambda x: initial_processes[x][3])
 				running_process = ready_queue[0]
+				ready_queue = ready_queue[1:]
 				initial_processes[running_process][6]=0
 				process_status[running_process] = "running"
-				ready_queue = ready_queue[1:]
+				#ready_queue = ready_queue[1:]
 				
 				#print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
 				t = randomOS(lines,initial_processes[running_process][2],randomNumberCounter)
 				randomNumberCounter+=1
-				# print t
-				# print initial_processes[running_process][3]
+				#print t
+				#print initial_processes[running_process][3]
 				if t>=initial_processes[running_process][3]:
 					t = initial_processes[running_process][3]
 					initial_processes[running_process][3]-=t
 					initial_processes[running_process][5]=0				
 				else:
 					initial_processes[running_process][3] = initial_processes[running_process][3]-t
-					initial_processes[running_process][5] = (initial_processes[running_process][4]*t)
-					initial_processes[running_process][9]+= initial_processes[running_process][5]
+					initial_processes[running_process][5] = (initial_processes[running_process][4]*t)-1
+					initial_processes[running_process][9] += initial_processes[running_process][5]+1
 				cpu_burst = t-1	
 		else:
 			cpu_burst-=1
 		for y in ready_queue:
-			initial_processes[y][6]+=1
-			initial_processes[y][10]+=1
+			if y!=running_process:
+				initial_processes[y][6]+=1
+				initial_processes[y][10]+=1
 		# print "BEFORE CYCLE "+str(time_counter)#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
 		# print "CPU BURST"
 		# print cpu_burst
@@ -119,7 +114,7 @@ def main(lines,randomNumberCounter):
 		# print "PROCESSES"
 		# print initial_processes
 		print process_status
-		"""Check if unstarted process has arrived"""
+		# """Check if unstarted process has arrived"""
 		temp_ready_unstarted_queue = []
 		if unstarted:
 			for x in unstarted:
