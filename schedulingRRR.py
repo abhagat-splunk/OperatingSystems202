@@ -1,19 +1,18 @@
-#from __future__ import division
 def main(lines,randomNumberCounter):
 	inp = raw_input()
 	inp = inp.replace('(','')
 	inp = inp.replace(')','')
 	#inp[:] = (value for value in inp if value!='(' or value!=')')
-	ioTIME = 0
+
 	inp = map(int,inp.split())
 	processes = []
 	counter = 0
 	cpu_time_original = []
 	for x in xrange(1,len(inp),4):#Quadruples
 		"""
-		0:Process Number, 1:Arrival Time, 2:Interval Upper Limit, 3:CPU Time, 4:Multiplier, 5:IO Burst, 6:ReadyQueueTime, 7:FinishingTime, 8:TurnAroundTime, 9:IOTime, 10:ReadyQueueOverallTime
+		0:Process Number, 1:Arrival Time, 2:Interval Upper Limit, 3:CPU Time, 4:Multiplier, 5:IO Burst, 6:ReadyQueueTime, 7:FinishingTime, 8:TurnAroundTime, 9:IOTime, 10:ReadyQueueOverallTime, 11: CPUBurstTime
 		"""
-		processes.append([counter,inp[x],inp[x+1],inp[x+2],inp[x+3],-1,0,0,0,0,0]) #Process Number and parameters
+		processes.append([counter,inp[x],inp[x+1],inp[x+2],inp[x+3],-1,0,0,0,0,0,0]) #Process Number and parameters
 		cpu_time_original.append(inp[x+2])
 		counter+=1
 	"""Not needed here I guess, lets see. Status for debugging."""
@@ -38,6 +37,7 @@ def main(lines,randomNumberCounter):
 	running_process = -1
 	blocked = []
 	terminating = []
+	quantum = 2
 	for x in processes:
 		process_arrival_index.append(x[0])
 		if x[1]==0:
@@ -82,19 +82,27 @@ def main(lines,randomNumberCounter):
 				# print initial_processes[running_process][3]
 				if t>=initial_processes[running_process][3]:
 					t = initial_processes[running_process][3]
-					initial_processes[running_process][3]-=t
+					initial_processes[running_process][11] = t
 					initial_processes[running_process][5]=0				
 				else:
-					initial_processes[running_process][3] = initial_processes[running_process][3]-t
+					initial_processes[running_process][11] = t
 					initial_processes[running_process][5] = (initial_processes[running_process][4]*t)-1
-					initial_processes[running_process][9]+= initial_processes[running_process][5]+1
-				cpu_burst = t-1	
+					initial_processes[running_process][9]+= initial_processes[running_process][5]+1	
 		else:
-			cpu_burst-=1
+			if quantum>0:
+				quantum-=1
+				initial_processes[running_process][11]-=1
+			else:
+				quantum=2
+				ready_queue.append(running_process)
+				process_status[running_process]="ready"
+				running_process = ready_queue[0]
+				process_status[running_process]="running"
+				continue	
 		for y in ready_queue:
 			initial_processes[y][6]+=1
 			initial_processes[y][10]+=1
-		# print "BEFORE CYCLE "+str(time_counter)#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
+		print "BEFORE CYCLE "+str(time_counter)#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
 		# print "CPU BURST"
 		# print cpu_burst
 		# print "RUNNING PROCESS"
@@ -109,7 +117,23 @@ def main(lines,randomNumberCounter):
 		# print terminating
 		# print "PROCESSES"
 		# print initial_processes
-		# print process_status
+		print process_status
+		"""Check if blocked processes have finished their IO Burst time"""
+		temp_ready_blocked_queue = []
+		if blocked:
+			for x in blocked:
+				if initial_processes[x][5]==0:
+					temp_ready_blocked_queue.append(x)
+					process_status[x] = "ready"
+				else:
+					initial_processes[x][5]-=1
+		for x in temp_ready_blocked_queue:
+			blocked.remove(x)
+		#print "Blocked to Ready queue"
+		#print temp_ready_blocked_queue
+		temp_ready_blocked_queue.sort(key=lambda x: process_arrival_index.index(x))	
+		ready_queue.extend(temp_ready_blocked_queue)
+		time_counter+=1
 		"""Check if unstarted process has arrived"""
 		temp_ready_unstarted_queue = []
 		if unstarted:
@@ -124,23 +148,7 @@ def main(lines,randomNumberCounter):
 		ready_queue.extend(temp_ready_unstarted_queue)
 		
 
-		"""Check if blocked processes have finished their IO Burst time"""
-		temp_ready_blocked_queue = []
-		if blocked:
-			ioTIME+=1
-			for x in blocked:
-				if initial_processes[x][5]==0:
-					temp_ready_blocked_queue.append(x)
-					process_status[x] = "ready"
-				else:
-					initial_processes[x][5]-=1
-		for x in temp_ready_blocked_queue:
-			blocked.remove(x)
-		#print "Blocked to Ready queue"
-		#print temp_ready_blocked_queue
-		temp_ready_blocked_queue.sort(key=lambda x: process_arrival_index.index(x))	
-		ready_queue.extend(temp_ready_blocked_queue)
-		time_counter+=1
+		
 	#print ready_queue
 	#print unstarted	
 	#print process_status	
@@ -154,30 +162,7 @@ def main(lines,randomNumberCounter):
 		print "\tI/O Time: "+str(initial_processes[x][9])
 		print "\tWaiting Time: "+str(initial_processes[x][10])
 		print ""
-	
 
-
-
-	print "Summary Data"
-	ft_list = []
-	tat_list = []
-	wt_list = []
-	for x in initial_processes:
-		ft_list.append(x[7])
-		tat_list.append(x[8])
-		wt_list.append(x[10])
-	ft = max(ft_list)
-	print "\tFinishing Time:\t"+str(ft)
-	cpu_time_used = 0
-	io_time_used = 0
-	for x in initial_processes:
-		cpu_time_used+=x[8]-x[9]-x[10]
-		io_time_used+=x[9]
-	print "\tCPU Utilization:\t"+str("{0:.6f}".format(cpu_time_used/float(ft)))
-	print "\tI/O Utilization:\t"+str("{0:.6f}".format(ioTIME/float(ft)))
-	print "\tThroughput:\t"+str("{0:.6f}".format(counter*100/float(ft)))+" per hundred cycles"	
-	print "\tAverage turnaround time:\t"+str("{0:.6f}".format(sum(tat_list)/float(counter)))
-	print "\tAverage waiting time:\t"+str("{0:.6f}".format(sum(wt_list)/float(counter)))
 """randomOS"""
 def randomOS(lines,B,randomNumberCounter):
 	return 1+(int(lines[randomNumberCounter])%B)
@@ -185,6 +170,7 @@ f = open("random-numbers.txt","r")
 lines = f.readlines()
 f.close()
 randomNumberCounter = 0
+#print lines
 #print randomOS(lines,5,randomNumberCounter)
 #print random.choice(lines).strip()
 main(lines,randomNumberCounter)

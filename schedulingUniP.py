@@ -1,4 +1,3 @@
-import sys
 def checkForUnstarted(initial_processes,time_counter,ready_queue,unstarted,process_status):
 	temp_ready_unstarted_queue = []
 	if unstarted:
@@ -9,7 +8,7 @@ def checkForUnstarted(initial_processes,time_counter,ready_queue,unstarted,proce
 	for x in temp_ready_unstarted_queue:
 		unstarted.remove(x)
 	#print "Unstarted to Ready"	
-	#print temp_ready_unstarted_queue	
+	print temp_ready_unstarted_queue	
 	ready_queue.extend(temp_ready_unstarted_queue)
 
 def main(lines,randomNumberCounter):
@@ -17,7 +16,7 @@ def main(lines,randomNumberCounter):
 	inp = inp.replace('(','')
 	inp = inp.replace(')','')
 	#inp[:] = (value for value in inp if value!='(' or value!=')')
-	ioTIME = 0
+
 	inp = map(int,inp.split())
 	processes = []
 	counter = 0
@@ -35,10 +34,7 @@ def main(lines,randomNumberCounter):
 
 	initial_processes = processes[:]
 	#First Come First Serve
-	processes.sort(key=lambda x: x[1])
-	proceses_order = []
-	for x in processes:
-		proceses_order.append(x[0]) 
+	processes.sort(key=lambda x: x[1]) 
 	#print initial_processes
 	#print processes
 	offset_timeCounter = 0
@@ -62,10 +58,10 @@ def main(lines,randomNumberCounter):
 		else:
 			unstarted.append(x[0])
 			process_status[x[0]] = "unstarted" 
+	print unstarted
 	us = unstarted[:]
+	print ready_queue
 	cpu_burst = 0
-	if verbose_flag:
-		print "Before Cycle\t0:\tunstarted\tunstarted\tunstarted"
 	while len(terminating)!=counter:
 	#for _ in xrange(5):
 		"""Check for Ready Queue processes"""
@@ -81,23 +77,19 @@ def main(lines,randomNumberCounter):
 					ready_queue = ready_queue[1:]
 					running_process=-1
 				else: 
+					print "BLOCKED!"
 					blocked.append(running_process)
 					process_status[running_process] = "blocked"
 					while initial_processes[running_process][5]!=0:
-						ioTIME+=1
 						checkForUnstarted(initial_processes,time_counter,ready_queue,unstarted,process_status)
-						if verbose_flag:
-							temp_str = ""
-							for x in proceses_order:
-								temp_str+=process_status[x]+"\t"
-							print "Before Cycle\t"+str(time_counter)+":\t"+temp_str+"\t"
 						time_counter+=1
 						for y in ready_queue:
 							if y!=running_process:
 								initial_processes[y][6]+=1
 								initial_processes[y][10]+=1
 						initial_processes[running_process][5]-=1
-						#print process_status
+						print "BEFORE CYCLE "+str(time_counter)
+						print process_status
 					running_process=-1	
 						
 			if ready_queue:
@@ -124,11 +116,7 @@ def main(lines,randomNumberCounter):
 			if y!=running_process:
 				initial_processes[y][6]+=1
 				initial_processes[y][10]+=1
-		if verbose_flag:
-			temp_str = ""
-			for x in proceses_order:
-				temp_str+=process_status[x]+"\t"
-			print "Before Cycle\t"+str(time_counter)+":\t"+temp_str#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
+		print "BEFORE CYCLE "+str(time_counter)#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
 		# print "CPU BURST"
 		# print cpu_burst
 		# print "RUNNING PROCESS"
@@ -143,11 +131,15 @@ def main(lines,randomNumberCounter):
 		# print terminating
 		# print "PROCESSES"
 		# print initial_processes
-		#print process_status
+		print process_status
 		"""Check if unstarted process has arrived"""
 		checkForUnstarted(initial_processes,time_counter,ready_queue,unstarted,process_status)
 		time_counter+=1
-
+	#print ready_queue
+	#print unstarted	
+	#print process_status	
+	#print initial_processes
+	#print process_arrival_index
 	for x in xrange(len(initial_processes)):
 		print "Process "+str(initial_processes[x][0])+":"
 		print "\t(A,B,C,M) = ("+str(initial_processes[x][1])+", "+str(initial_processes[x][2])+", "+str(cpu_time_original[x])+", "+str(initial_processes[x][4])+")"
@@ -161,27 +153,6 @@ def main(lines,randomNumberCounter):
 			print "\tWaiting Time: "+str(initial_processes[x][10])	
 		print ""
 
-
-	print "Summary Data"
-	ft_list = []
-	tat_list = []
-	wt_list = []
-	for x in initial_processes:
-		ft_list.append(x[7])
-		tat_list.append(x[8])
-		wt_list.append(x[10])
-	ft = max(ft_list)
-	print "\tFinishing Time:\t"+str(ft)
-	cpu_time_used = 0
-	io_time_used = 0
-	for x in initial_processes:
-		cpu_time_used+=x[8]-x[9]-x[10]
-		io_time_used+=x[9]
-	print "\tCPU Utilization:\t"+str("{0:.6f}".format(cpu_time_used/float(ft)))
-	print "\tI/O Utilization:\t"+str("{0:.6f}".format(ioTIME/float(ft)))
-	print "\tThroughput:\t"+str("{0:.6f}".format(counter*100/float(ft)))+" per hundred cycles"	
-	print "\tAverage turnaround time:\t"+str("{0:.6f}".format(sum(tat_list)/float(counter)))
-	print "\tAverage waiting time:\t"+str("{0:.6f}".format(sum(wt_list)/float(counter)))
 """randomOS"""
 def randomOS(lines,B,randomNumberCounter):
 	return 1+(int(lines[randomNumberCounter])%B)
@@ -189,10 +160,6 @@ f = open("random-numbers.txt","r")
 lines = f.readlines()
 f.close()
 randomNumberCounter = 0
-verbose_flag = False
-if sys.argv[1] == '--verbose':
-	verbose_flag = True
-
 #print randomOS(lines,5,randomNumberCounter)
 #print random.choice(lines).strip()
 main(lines,randomNumberCounter)

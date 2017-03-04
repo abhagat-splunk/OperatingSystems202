@@ -3,7 +3,7 @@ def main(lines,randomNumberCounter):
 	inp = inp.replace('(','')
 	inp = inp.replace(')','')
 	#inp[:] = (value for value in inp if value!='(' or value!=')')
-
+	ioTIME = 0
 	inp = map(int,inp.split())
 	processes = []
 	counter = 0
@@ -131,6 +131,7 @@ def main(lines,randomNumberCounter):
 		"""Check if blocked processes have finished their IO Burst time"""
 		temp_ready_blocked_queue = []
 		if blocked:
+			ioTIME+=1
 			for x in blocked:
 				if initial_processes[x][5]==0:
 					temp_ready_blocked_queue.append(x)
@@ -158,6 +159,27 @@ def main(lines,randomNumberCounter):
 		print "\tWaiting Time: "+str(initial_processes[x][10])
 		print ""
 
+
+	print "Summary Data"
+	ft_list = []
+	tat_list = []
+	wt_list = []
+	for x in initial_processes:
+		ft_list.append(x[7])
+		tat_list.append(x[8])
+		wt_list.append(x[10])
+	ft = max(ft_list)
+	print "\tFinishing Time:\t"+str(ft)
+	cpu_time_used = 0
+	io_time_used = 0
+	for x in initial_processes:
+		cpu_time_used+=x[8]-x[9]-x[10]
+		io_time_used+=x[9]
+	print "\tCPU Utilization:\t"+str("{0:.6f}".format(cpu_time_used/float(ft)))
+	print "\tI/O Utilization:\t"+str("{0:.6f}".format(ioTIME/float(ft)))
+	print "\tThroughput:\t"+str("{0:.6f}".format(counter*100/float(ft)))+" per hundred cycles"	
+	print "\tAverage turnaround time:\t"+str("{0:.6f}".format(sum(tat_list)/float(counter)))
+	print "\tAverage waiting time:\t"+str("{0:.6f}".format(sum(wt_list)/float(counter)))
 """randomOS"""
 def randomOS(lines,B,randomNumberCounter):
 	return 1+(int(lines[randomNumberCounter])%B)
