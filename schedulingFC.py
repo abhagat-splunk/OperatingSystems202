@@ -1,6 +1,8 @@
 #from __future__ import division
+import sys
 def main(lines,randomNumberCounter):
 	inp = raw_input()
+	print "The original input was:\t"+inp
 	inp = inp.replace('(','')
 	inp = inp.replace(')','')
 	#inp[:] = (value for value in inp if value!='(' or value!=')')
@@ -23,8 +25,13 @@ def main(lines,randomNumberCounter):
 	initial_processes = processes[:]
 	#First Come First Serve
 	processes.sort(key=lambda x: x[1]) 
-	#print initial_processes
-	#print processes
+	sortedprocessesstring = str(counter)+" "
+
+	proceses_order = []
+	for x in processes:
+		proceses_order.append(x[0])
+		sortedprocessesstring+="("+str(x[1])+" "+str(x[2])+" "+str(x[3])+" "+str(x[4])+") " 
+	print "The sorted input is:\t"+sortedprocessesstring
 	offset_timeCounter = 0
 	while processes[0][1]!=0:
 		if(processes[0][1]!=0):
@@ -49,6 +56,9 @@ def main(lines,randomNumberCounter):
 	#print unstarted
 	#print ready_queue
 	cpu_burst = 0
+	if verbose_flag:
+		print "This detailed printout gives the state and remaining burst for each process"
+		print "Before Cycle\t0:\tunstarted\tunstarted\tunstarted"
 	while len(terminating)!=counter:
 	#for _ in xrange(5):
 		"""Check for Ready Queue processes"""
@@ -88,12 +98,17 @@ def main(lines,randomNumberCounter):
 					initial_processes[running_process][3] = initial_processes[running_process][3]-t
 					initial_processes[running_process][5] = (initial_processes[running_process][4]*t)-1
 					initial_processes[running_process][9]+= initial_processes[running_process][5]+1
-				cpu_burst = t-1	
+				cpu_burst = t-1
 		else:
 			cpu_burst-=1
 		for y in ready_queue:
 			initial_processes[y][6]+=1
 			initial_processes[y][10]+=1
+		if verbose_flag:
+			temp_str = ""
+			for x in proceses_order:
+				temp_str+=process_status[x]+"\t"
+			print "Before Cycle\t"+str(time_counter)+":\t"+temp_str	
 		# print "BEFORE CYCLE "+str(time_counter)#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
 		# print "CPU BURST"
 		# print cpu_burst
@@ -146,14 +161,17 @@ def main(lines,randomNumberCounter):
 	#print process_status	
 	#print initial_processes
 	#print process_arrival_index
-	for x in xrange(len(initial_processes)):
-		print "Process "+str(initial_processes[x][0])+":"
+	print "The scheduling algorithm used was First Come First Served"
+	temp_count = 0
+	for x in proceses_order:
+		print "Process "+str(temp_count)+":"
 		print "\t(A,B,C,M) = ("+str(initial_processes[x][1])+", "+str(initial_processes[x][2])+", "+str(cpu_time_original[x])+", "+str(initial_processes[x][4])+")"
 		print "\tFinishing Time: "+str(initial_processes[x][7])
 		print "\tTurnaround Time: "+str(initial_processes[x][8])
 		print "\tI/O Time: "+str(initial_processes[x][9])
 		print "\tWaiting Time: "+str(initial_processes[x][10])
 		print ""
+		temp_count+=1
 	
 
 
@@ -173,11 +191,11 @@ def main(lines,randomNumberCounter):
 	for x in initial_processes:
 		cpu_time_used+=x[8]-x[9]-x[10]
 		io_time_used+=x[9]
-	print "\tCPU Utilization:\t"+str("{0:.6f}".format(cpu_time_used/float(ft)))
-	print "\tI/O Utilization:\t"+str("{0:.6f}".format(ioTIME/float(ft)))
-	print "\tThroughput:\t"+str("{0:.6f}".format(counter*100/float(ft)))+" per hundred cycles"	
-	print "\tAverage turnaround time:\t"+str("{0:.6f}".format(sum(tat_list)/float(counter)))
-	print "\tAverage waiting time:\t"+str("{0:.6f}".format(sum(wt_list)/float(counter)))
+	print "\tCPU Utilization: "+str("{0:.6f}".format(cpu_time_used/float(ft)))
+	print "\tI/O Utilization: "+str("{0:.6f}".format(ioTIME/float(ft)))
+	print "\tThroughput: "+str("{0:.6f}".format(counter*100/float(ft)))+" per hundred cycles"	
+	print "\tAverage turnaround time: "+str("{0:.6f}".format(sum(tat_list)/float(counter)))
+	print "\tAverage waiting time: "+str("{0:.6f}".format(sum(wt_list)/float(counter)))
 """randomOS"""
 def randomOS(lines,B,randomNumberCounter):
 	return 1+(int(lines[randomNumberCounter])%B)
@@ -185,6 +203,10 @@ f = open("random-numbers.txt","r")
 lines = f.readlines()
 f.close()
 randomNumberCounter = 0
-#print randomOS(lines,5,randomNumberCounter)
-#print random.choice(lines).strip()
-main(lines,randomNumberCounter)
+verbose_flag = False
+try:
+	if sys.argv[1] == '--verbose':
+		verbose_flag = True
+		main(lines,randomNumberCounter)
+except:
+	main(lines,randomNumberCounter)

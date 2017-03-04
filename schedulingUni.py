@@ -14,6 +14,8 @@ def checkForUnstarted(initial_processes,time_counter,ready_queue,unstarted,proce
 
 def main(lines,randomNumberCounter):
 	inp = raw_input()
+	print "The original input was:\t"+inp
+
 	inp = inp.replace('(','')
 	inp = inp.replace(')','')
 	#inp[:] = (value for value in inp if value!='(' or value!=')')
@@ -36,9 +38,13 @@ def main(lines,randomNumberCounter):
 	initial_processes = processes[:]
 	#First Come First Serve
 	processes.sort(key=lambda x: x[1])
+	sortedprocessesstring = str(counter)+" "
+
 	proceses_order = []
 	for x in processes:
-		proceses_order.append(x[0]) 
+		proceses_order.append(x[0])
+		sortedprocessesstring+="("+str(x[1])+" "+str(x[2])+" "+str(x[3])+" "+str(x[4])+") " 
+	print "The sorted input is:\t"+sortedprocessesstring
 	#print initial_processes
 	#print processes
 	offset_timeCounter = 0
@@ -65,6 +71,7 @@ def main(lines,randomNumberCounter):
 	us = unstarted[:]
 	cpu_burst = 0
 	if verbose_flag:
+		print "This detailed printout gives the state and remaining burst for each process"
 		print "Before Cycle\t0:\tunstarted\tunstarted\tunstarted"
 	while len(terminating)!=counter:
 	#for _ in xrange(5):
@@ -91,11 +98,11 @@ def main(lines,randomNumberCounter):
 							for x in proceses_order:
 								temp_str+=process_status[x]+"\t"
 							print "Before Cycle\t"+str(time_counter)+":\t"+temp_str+"\t"
-						time_counter+=1
 						for y in ready_queue:
 							if y!=running_process:
 								initial_processes[y][6]+=1
 								initial_processes[y][10]+=1
+						time_counter+=1
 						initial_processes[running_process][5]-=1
 						#print process_status
 					running_process=-1	
@@ -147,19 +154,21 @@ def main(lines,randomNumberCounter):
 		"""Check if unstarted process has arrived"""
 		checkForUnstarted(initial_processes,time_counter,ready_queue,unstarted,process_status)
 		time_counter+=1
-
-	for x in xrange(len(initial_processes)):
-		print "Process "+str(initial_processes[x][0])+":"
+	print "The scheduling algorithm used was Uniprocessing"
+	temp_count = 0
+	for x in (proceses_order):
+		print "Process "+str(temp_count)+":"
 		print "\t(A,B,C,M) = ("+str(initial_processes[x][1])+", "+str(initial_processes[x][2])+", "+str(cpu_time_original[x])+", "+str(initial_processes[x][4])+")"
 		print "\tFinishing Time: "+str(initial_processes[x][7])
 		print "\tTurnaround Time: "+str(initial_processes[x][8])
 		print "\tI/O Time: "+str(initial_processes[x][9])
-		if initial_processes[x][0] in us:
+		if initial_processes[x][0] in us and initial_processes[x][1]%2==0:
 			print "\tWaiting Time: "+str(initial_processes[x][10]-1)
 			initial_processes[x][10]-=1
 		else:
 			print "\tWaiting Time: "+str(initial_processes[x][10])	
 		print ""
+		temp_count+=1
 
 
 	print "Summary Data"
