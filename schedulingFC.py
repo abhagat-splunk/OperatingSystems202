@@ -58,7 +58,7 @@ def main(lines,randomNumberCounter):
 	cpu_burst = 0
 	if verbose_flag:
 		print "This detailed printout gives the state and remaining burst for each process"
-		print "Before Cycle\t0:\tunstarted\tunstarted\tunstarted"
+		print "Before Cycle\t0:\t"+"unstarted 0 "*counter
 	while len(terminating)!=counter:
 	#for _ in xrange(5):
 		"""Check for Ready Queue processes"""
@@ -85,11 +85,9 @@ def main(lines,randomNumberCounter):
 				process_status[running_process] = "running"
 				ready_queue = ready_queue[1:]
 				
-				#print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
+				print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
 				t = randomOS(lines,initial_processes[running_process][2],randomNumberCounter)
 				randomNumberCounter+=1
-				# print t
-				# print initial_processes[running_process][3]
 				if t>=initial_processes[running_process][3]:
 					t = initial_processes[running_process][3]
 					initial_processes[running_process][3]-=t
@@ -107,24 +105,14 @@ def main(lines,randomNumberCounter):
 		if verbose_flag:
 			temp_str = ""
 			for x in proceses_order:
-				temp_str+=process_status[x]+"\t"
+				if process_status[x]=="running":
+					temp_str+=process_status[x]+" "+str(cpu_burst+1)+" "
+				elif process_status[x]=="blocked":
+					temp_str+=process_status[x]+" "+str(initial_processes[x][5]+1)+" "
+				else:
+					temp_str+=process_status[x]+" 0 "	
 			print "Before Cycle\t"+str(time_counter)+":\t"+temp_str	
-		# print "BEFORE CYCLE "+str(time_counter)#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
-		# print "CPU BURST"
-		# print cpu_burst
-		# print "RUNNING PROCESS"
-		# print running_process
-		# print "READY"
-		# print ready_queue
-		# print "BLOCKED"
-		# print blocked
-		# print "UNSTARTED"
-		# print unstarted
-		# print "TERMINATING"
-		# print terminating
-		# print "PROCESSES"
-		# print initial_processes
-		# print process_status
+
 		"""Check if unstarted process has arrived"""
 		temp_ready_unstarted_queue = []
 		if unstarted:

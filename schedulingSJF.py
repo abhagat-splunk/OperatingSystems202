@@ -64,9 +64,7 @@ def main(lines,randomNumberCounter):
 	#for _ in xrange(5):
 		"""Check for Ready Queue processes"""
 		if cpu_burst==0:
-			#print "INSIDE IF"
 			if running_process>=0:
-				print initial_processes[running_process][3]	
 				if initial_processes[running_process][3]==0:
 					terminating.append(running_process)
 					initial_processes[running_process][7] = time_counter-1
@@ -74,27 +72,18 @@ def main(lines,randomNumberCounter):
 					process_status[running_process] = "terminated"
 					running_process=-1
 				else: 
-					#print "BLOCKED!"
-					print initial_processes[running_process][5]
 					blocked.append(running_process)
 					process_status[running_process] = "blocked"
 					running_process=-1	
 						
 			if ready_queue:
-				#s = sorted(s, key = lambda x: (x[1], x[2]))
-				#ready_queue.sort(key=lambda x: (-initial_processes[x][6],initial_processes[x][1]))
 				ready_queue.sort(key=lambda x: initial_processes[x][3])
 				running_process = ready_queue[0]
 				ready_queue = ready_queue[1:]
 				initial_processes[running_process][6]=0
 				process_status[running_process] = "running"
-				#ready_queue = ready_queue[1:]
-				
-				#print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
 				t = randomOS(lines,initial_processes[running_process][2],randomNumberCounter)
 				randomNumberCounter+=1
-				#print t
-				#print initial_processes[running_process][3]
 				if t>=initial_processes[running_process][3]:
 					t = initial_processes[running_process][3]
 					initial_processes[running_process][3]-=t
@@ -110,6 +99,11 @@ def main(lines,randomNumberCounter):
 			if y!=running_process:
 				initial_processes[y][6]+=1
 				initial_processes[y][10]+=1
+		if verbose_flag:
+			temp_str = ""
+			for x in proceses_order:
+				temp_str+=process_status[x]+"\t"
+			print "Before Cycle\t"+str(time_counter)+":\t"+temp_str			
 		# print "BEFORE CYCLE "+str(time_counter)#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
 		# print "CPU BURST"
 		# print cpu_burst
@@ -125,7 +119,7 @@ def main(lines,randomNumberCounter):
 		# print terminating
 		# print "PROCESSES"
 		# print initial_processes
-		print process_status
+		#print process_status
 		# """Check if unstarted process has arrived"""
 		temp_ready_unstarted_queue = []
 		if unstarted:
@@ -152,16 +146,9 @@ def main(lines,randomNumberCounter):
 					initial_processes[x][5]-=1
 		for x in temp_ready_blocked_queue:
 			blocked.remove(x)
-		#print "Blocked to Ready queue"
-		#print temp_ready_blocked_queue
 		temp_ready_blocked_queue.sort(key=lambda x: process_arrival_index.index(x))	
 		ready_queue.extend(temp_ready_blocked_queue)
 		time_counter+=1
-	#print ready_queue
-	#print unstarted	
-	#print process_status	
-	#print initial_processes
-	#print process_arrival_index
 	print "The scheduling algorithm used was Shortest Job First"
 	temp_count = 0
 	for x in proceses_order:
