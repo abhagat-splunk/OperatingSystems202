@@ -1,0 +1,207 @@
+def main(lines,randomNumberCounter):
+	inp = raw_input()
+	inp = inp.replace('(','')
+	inp = inp.replace(')','')
+	#inp[:] = (value for value in inp if value!='(' or value!=')')
+
+	inp = map(int,inp.split())
+	processes = []
+	counter = 0
+	cpu_time_original = []
+	for x in xrange(1,len(inp),4):#Quadruples
+		"""
+		0:Process Number, 1:Arrival Time, 2:Interval Upper Limit, 3:CPU Time, 4:Multiplier, 5:IO Burst, 6:ReadyQueueTime, 7:FinishingTime, 8:TurnAroundTime, 9:IOTime, 10:ReadyQueueOverallTime
+		"""
+		processes.append([counter,inp[x],inp[x+1],inp[x+2],inp[x+3],-1,0,0,0,0,0]) #Process Number and parameters
+		cpu_time_original.append(inp[x+2])
+		counter+=1
+	"""Not needed here I guess, lets see. Status for debugging."""
+	process_status = ["unstarted" for x in xrange(counter)]	
+	process_arrival_index = []
+
+	initial_processes = processes[:]
+	#First Come First Serve
+	initial_processes.sort(key=lambda x: x[1]) 
+	#print initial_processes
+	#print processes
+	offset_timeCounter = 0
+	# while processes[0][1]!=0:
+	# 	if(processes[0][1]!=0):
+	# 		offset_timeCounter+=1
+	# 		for x in xrange(len(processes)):
+	# 			processes[x][1]-=1	
+	#print processes
+	unstarted = []
+	time_counter = 0
+	ready_queue = []
+	running_process = -1
+	blocked = []
+	terminating = []
+	quantum = 0
+	temp_ready = []
+	print counter
+	print initial_processes
+	#print initial_processes[0][0]
+	for x in xrange(counter):
+		process_arrival_index.append(initial_processes[x][0])
+		unstarted.append(x)
+	print process_arrival_index	
+	print unstarted
+	print ready_queue
+	cpu_burst = [0 for x in xrange(counter)]
+	while len(terminating)!=counter:
+		print "BEFORE CYCLE "+str(time_counter)+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
+		print "CPU BURST"
+		print str(cpu_burst[2])+"\t"+str(cpu_burst[0])+"\t"+str(cpu_burst[1])
+		"""Check for quantum and CPU Burst only if running process != -1"""
+		if running_process>=0:	
+			"""Check if CPU Burst time for a process is 0 or if quantum is 0"""
+			if cpu_burst[running_process]==0 or quantum<=0:
+				quantum = 1
+				"""Re-initialize quantum to 2. Now check what happened actually.
+				First condition: Check if CPU Burst is over => (Yes)
+				Check for terminating/Blocked condition."""
+				if cpu_burst[running_process]<=0:
+					print "WTF!"
+					if initial_processes[running_process][3]==0:
+						print "TERMINATED!"
+						terminating.append(running_process)
+						initial_processes[running_process][7] = time_counter-1
+						initial_processes[running_process][8] = initial_processes[running_process][7]-initial_processes[running_process][1]-offset_timeCounter
+						process_status[running_process] = "terminated"
+						running_process=-1
+					else: 
+						print "BLOCKED!"
+						blocked.append(running_process)
+						process_status[running_process] = "blocked"
+						running_process=-1
+				else:
+					print "OH"
+					"""Now Else for only quantum is 0"""
+					cpu_burst[running_process]-=1
+					temp_ready.append(running_process)
+					process_status[running_process]="ready"
+					running_process=-1
+			else:
+				"""If CPU Burst time or quantum is not equal to 0"""
+				cpu_burst[running_process]-=1
+				quantum-=1
+		
+
+		"""Check if blocked processes have finished their IO Burst time"""
+		temp_ready_blocked_queue = []
+		if blocked:
+			for x in blocked:
+				if initial_processes[x][5]==0:
+					temp_ready_blocked_queue.append(x)
+					process_status[x] = "ready"
+				else:
+					initial_processes[x][5]-=1	
+		for x in temp_ready_blocked_queue:
+			blocked.remove(x)
+		
+		"""Check if unstarted process has arrived"""
+		temp_ready_unstarted_queue = []
+		if unstarted:
+			for x in unstarted:
+				if initial_processes[x][1]==time_counter:
+					process_status[x] = "ready"
+					temp_ready_unstarted_queue.append(x)
+		for x in temp_ready_unstarted_queue:
+			unstarted.remove(x)
+		
+
+		temp_ready.extend(temp_ready_blocked_queue)
+		temp_ready.extend(temp_ready_unstarted_queue)
+		
+		"""Appending everything to temp_ready. Sort this using tie-breakers and append it to the original ready queue"""
+		temp_ready.sort(key=lambda x:(-initial_processes[x][6],process_arrival_index.index(x)))
+		ready_queue.extend(temp_ready)
+		temp_ready = []
+		"""Time for a new running process!"""
+		if running_process==-1:
+			if ready_queue:
+				running_process = ready_queue[0]
+				process_status[running_process] = "running"
+				ready_queue = ready_queue[1:]
+				initial_processes[running_process][10]+=initial_processes[running_process][6]
+				initial_processes[running_process][6]=0
+				quantum = 1
+				"""No remaining CPU Burst time"""
+				if cpu_burst[running_process]==0:
+					print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
+					t = randomOS(lines,initial_processes[running_process][2],randomNumberCounter)
+					randomNumberCounter+=1
+					#print t
+					#print initial_processes[running_process][3]
+					if t>=initial_processes[running_process][3]:
+						t = initial_processes[running_process][3]
+						initial_processes[running_process][3]-=t
+						initial_processes[running_process][5]=0				
+					else:
+						initial_processes[running_process][3] = initial_processes[running_process][3]-t
+						initial_processes[running_process][5] = (initial_processes[running_process][4]*t)
+						initial_processes[running_process][9]+= initial_processes[running_process][5]
+					cpu_burst[running_process] = t-1
+		
+		
+		
+		
+		#print "Temp Ready"
+		#print temp_ready
+		
+		
+
+
+
+						
+
+
+
+
+
+		#print "QUANTUM: "+str(quantum)
+		# print "RUNNING PROCESS"
+		# print running_process
+		# print "READY"
+		# print ready_queue
+		# print "BLOCKED"
+		# print blocked
+		# print "UNSTARTED"
+		# print unstarted
+		# print "TERMINATING"
+		# print terminating
+		# print "PROCESSES"
+		# print initial_processes
+		# print process_status
+
+
+		
+		"""Adding ReadyQueueTime"""	
+		for y in ready_queue:
+			initial_processes[y][6]+=1			
+		time_counter+=1
+	#print ready_queue
+	#print unstarted	
+	#print process_status	
+	#print initial_processes
+	#print process_arrival_index
+	for x in xrange(len(initial_processes)):
+		print "Process "+str(initial_processes[x][0])+":"
+		print "\t(A,B,C,M) = ("+str(initial_processes[x][1])+", "+str(initial_processes[x][2])+", "+str(cpu_time_original[x])+", "+str(initial_processes[x][4])+")"
+		print "\tFinishing Time: "+str(initial_processes[x][7])
+		print "\tTurnaround Time: "+str(initial_processes[x][8])
+		print "\tI/O Time: "+str(initial_processes[x][9])
+		print "\tWaiting Time: "+str(initial_processes[x][10])
+		print ""
+
+"""randomOS"""
+def randomOS(lines,B,randomNumberCounter):
+	return 1+(int(lines[randomNumberCounter])%B)
+f = open("random-numbers.txt","r")
+lines = f.readlines()
+f.close()
+randomNumberCounter = 0
+#print randomOS(lines,5,randomNumberCounter)
+#print random.choice(lines).strip()
+main(lines,randomNumberCounter)
