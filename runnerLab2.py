@@ -750,18 +750,24 @@ lines = f.readlines()
 f.close()
 randomNumberCounter = 0
 verbose_flag = False
-inp = raw_input()
 if len(sys.argv) > 1:
 	if sys.argv[1] == '--verbose':
 		verbose_flag = True
-print "------------------First Come First Serve--------------------"
-FCmain(inp,lines,randomNumberCounter)
-print "------------------------------------------------------------"
-print "----------------------Round Robin---------------------------"
-RRmain(inp,lines,randomNumberCounter)
-print "------------------Shortest Job First------------------------"
-SJFmain(inp,lines,randomNumberCounter)
-print "------------------------------------------------------------"
-print "--------------------Uniprocessing---------------------------"
-Unimain(inp,lines,randomNumberCounter)
-print "------------------------------------------------------------" 					
+		file_name = sys.argv[2]
+	else:
+		file_name = sys.argv[1]
+g = open(file_name,"r")
+for inp in g:
+	inp = inp.strip()
+	print "------------------First Come First Serve--------------------"
+	FCmain(inp,lines,randomNumberCounter)
+	print "------------------------------------------------------------"
+	print "----------------------Round Robin---------------------------"
+	RRmain(inp,lines,randomNumberCounter)
+	print "------------------Shortest Job First------------------------"
+	SJFmain(inp,lines,randomNumberCounter)
+	print "------------------------------------------------------------"
+	print "--------------------Uniprocessing---------------------------"
+	Unimain(inp,lines,randomNumberCounter)
+	print "------------------------------------------------------------" 
+g.close()						
