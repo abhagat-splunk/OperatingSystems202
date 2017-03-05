@@ -1,7 +1,6 @@
 #from __future__ import division
 import sys
-def main(lines,randomNumberCounter):
-	inp = raw_input()
+def main(inp,lines,randomNumberCounter):
 	print "The original input was:\t"+inp
 	inp = inp.replace('(','')
 	inp = inp.replace(')','')
@@ -84,8 +83,8 @@ def main(lines,randomNumberCounter):
 				initial_processes[running_process][6]=0
 				process_status[running_process] = "running"
 				ready_queue = ready_queue[1:]
-				
-				print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
+				if verbose_flag:
+					print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
 				t = randomOS(lines,initial_processes[running_process][2],randomNumberCounter)
 				randomNumberCounter+=1
 				if t>=initial_processes[running_process][3]:
@@ -192,9 +191,10 @@ lines = f.readlines()
 f.close()
 randomNumberCounter = 0
 verbose_flag = False
+inp = sys.argv[1]
 try:
-	if sys.argv[1] == '--verbose':
+	if sys.argv[2] == '--verbose':
 		verbose_flag = True
-		main(lines,randomNumberCounter)
+		main(inp,lines,randomNumberCounter)
 except:
 	main(lines,randomNumberCounter)

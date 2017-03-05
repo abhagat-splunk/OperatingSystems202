@@ -72,7 +72,7 @@ def main(lines,randomNumberCounter):
 	cpu_burst = 0
 	if verbose_flag:
 		print "This detailed printout gives the state and remaining burst for each process"
-		print "Before Cycle\t0:\tunstarted\tunstarted\tunstarted"
+		print "Before Cycle\t0:\t"+"unstarted "*counter
 	while len(terminating)!=counter:
 	#for _ in xrange(5):
 		"""Check for Ready Queue processes"""
@@ -96,8 +96,13 @@ def main(lines,randomNumberCounter):
 						if verbose_flag:
 							temp_str = ""
 							for x in proceses_order:
-								temp_str+=process_status[x]+"\t"
-							print "Before Cycle\t"+str(time_counter)+":\t"+temp_str+"\t"
+								if process_status[x]=="running":
+									temp_str+=process_status[x]+" "+str(cpu_burst+1)+" "
+								elif process_status[x]=="blocked":
+									temp_str+=process_status[x]+" "+str(initial_processes[x][5])+" "
+								else:
+									temp_str+=process_status[x]+" 0 "	
+							print "Before Cycle\t"+str(time_counter)+":\t"+temp_str#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
 						for y in ready_queue:
 							if y!=running_process:
 								initial_processes[y][6]+=1
@@ -112,7 +117,8 @@ def main(lines,randomNumberCounter):
 				#initial_processes[running_process][10]+=initial_processes[running_process][6]
 				initial_processes[running_process][6]=0
 				process_status[running_process] = "running"
-				
+				if verbose_flag:
+					print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
 				t = randomOS(lines,initial_processes[running_process][2],randomNumberCounter)
 				randomNumberCounter+=1
 				
@@ -134,23 +140,13 @@ def main(lines,randomNumberCounter):
 		if verbose_flag:
 			temp_str = ""
 			for x in proceses_order:
-				temp_str+=process_status[x]+"\t"
+				if process_status[x]=="running":
+					temp_str+=process_status[x]+" "+str(cpu_burst+1)+" "
+				elif process_status[x]=="blocked":
+					temp_str+=process_status[x]+" "+str(initial_processes[x][5]+1)+" "
+				else:
+					temp_str+=process_status[x]+" 0 "	
 			print "Before Cycle\t"+str(time_counter)+":\t"+temp_str#+"\t"+process_status[2]+"\t"+process_status[0]+"\t"+process_status[1]
-		# print "CPU BURST"
-		# print cpu_burst
-		# print "RUNNING PROCESS"
-		# print running_process
-		# print "READY"
-		# print ready_queue
-		# print "BLOCKED"
-		# print blocked
-		# print "UNSTARTED"
-		# print unstarted
-		# print "TERMINATING"
-		# print terminating
-		# print "PROCESSES"
-		# print initial_processes
-		#print process_status
 		"""Check if unstarted process has arrived"""
 		checkForUnstarted(initial_processes,time_counter,ready_queue,unstarted,process_status)
 		time_counter+=1
@@ -199,9 +195,10 @@ lines = f.readlines()
 f.close()
 randomNumberCounter = 0
 verbose_flag = False
-if sys.argv[1] == '--verbose':
-	verbose_flag = True
-
-#print randomOS(lines,5,randomNumberCounter)
-#print random.choice(lines).strip()
-main(lines,randomNumberCounter)
+inp = sys.argv[1]
+try:
+	if sys.argv[2] == '--verbose':
+		verbose_flag = True
+		main(inp,lines,randomNumberCounter)
+except:
+	main(lines,randomNumberCounter)

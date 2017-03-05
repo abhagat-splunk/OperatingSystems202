@@ -32,7 +32,6 @@ def main(lines,randomNumberCounter):
 
 	"""Sorting input"""
 	initial_processes.sort(key=lambda x: (x[1])) 
-	print initial_processes
 	
 
 
@@ -45,7 +44,6 @@ def main(lines,randomNumberCounter):
 	
 			 
 	print "The sorted input is:\t"+sortedprocessesstring
-	print proceses_order
 	offset_timeCounter = 0
 	unstarted = []
 	time_counter = 0
@@ -56,19 +54,13 @@ def main(lines,randomNumberCounter):
 	quantum = 2
 	temp_ready = []
 	ioTIME = 0
-	print counter
 	
 	for x in xrange(counter):
 		process_arrival_index.append(initial_processes[x][0])
 		unstarted.append(x)
 
-	print process_arrival_index	
-	print unstarted
-	print ready_queue
-
 	if verbose_flag:
 		print "This detailed printout gives the state and remaining burst for each process"
-		print "Before Cycle\t0:\tunstarted\tunstarted\tunstarted"
 	cpu_burst = [0 for x in xrange(counter)]
 	while len(terminating)!=counter:
 		if verbose_flag:
@@ -149,7 +141,8 @@ def main(lines,randomNumberCounter):
 				initial_processes[running_process][6]=0
 				"""No remaining CPU Burst time"""
 				if cpu_burst[running_process]<=0:
-					print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
+					if verbose_flag:
+						print "Find burst when choosing ready process to run "+str(lines[randomNumberCounter])
 					t = randomOS(lines,initial_processes[running_process][2],randomNumberCounter)
 					randomNumberCounter+=1
 					if t>=initial_processes[running_process][3]:
@@ -212,7 +205,10 @@ lines = f.readlines()
 f.close()
 randomNumberCounter = 0
 verbose_flag = False
-
-if sys.argv[1] == '--verbose':
-	verbose_flag = True
+inp = sys.argv[1]
+try:
+	if sys.argv[2] == '--verbose':
+		verbose_flag = True
+		main(inp,lines,randomNumberCounter)
+except:
 	main(lines,randomNumberCounter)
