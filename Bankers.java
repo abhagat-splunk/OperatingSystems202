@@ -90,7 +90,7 @@ class Bankers{
 		int terminating = 0;
 		ArrayList<Integer> terminated = new ArrayList<Integer>();
 		//Blocked processes (Process ID: Waiting Time)
-		HashMap<Integer,Integer> blocked = new HashMap<Integer,Integer>();
+		ArrayList<Integer> blocked = new ArrayList<Integer>();
 
 		//Initialization of numberOfEachResource present for the system to work on
 		for(int x=0;x<numberOfResources;x++){
@@ -145,31 +145,50 @@ class Bankers{
 		while(terminating<numberOfTasks){
 			System.out.println("Number of terminating processes: "+terminating);
 			System.out.println("Time Interval: "+timeCounter+"-"+(timeCounter+1));
+			for(int x=0;x<numberOfResources;x++){
+				System.out.println("Resource ID: "+(x+1)+" Number of resources: "+resources[x]);
+			}
 			//Checking if the blocked resources 
 			//Include the highest priority code according to waiting time at the end of the loop!
-			for(Integer key: blocked.keySet()){
-				boolean status = false;
-				for(int y=0;y<numberOfResources;y++){
-					if(initialClaims[key-1][y]<=resources[y]){
+			//Tech Debt => ArrayList
+			ArrayList<Integer> tempBlockedIds = new ArrayList<Integer>();
+			HashMap<Integer,ArrayList<Integer>> blockedResourceNeeds = new HashMap<Integer,ArrayList<Integer>>();
+			if(!blocked.isEmpty()){
+				for(Integer key: blocked){
+					boolean status = false;
+					int rId = blockedResourceNeeds.get(key).get(0);
+					int rAmount = blockedResourceNeeds.get(key).get(0);
+					if(resources[rId]>=rAmount){
 						status = true;
 					}
-					else{
-						status = false;
-						break;
+					if(status==true){
+						tempBlockedIds.add(key);
 					}
 				}
-				if(status==true){
+				for(Integer key: tempBlockedIds){
 					blocked.remove(key);
+					blockedResourceNeeds.remove(key);
+				}	
+			}
+			
+			//
+			ArrayList<Integer> orderOfIds = new ArrayList<Integer>();
+			for(Integer k: tempBlockedIds){
+				orderOfIds.add(k);
+			}
+			System.out.println(orderOfIds);
+			for(int x=1;x<numberOfTasks;x++){
+				if(!orderOfIds.contains(x)){
+					orderOfIds.add(x);
 				}
 			}
-			//
-			for(int x=1;x<=numberOfTasks;x++){
+			for(Integer x:orderOfIds){
 				//Checking if process is blocked or not!
 				if(terminated.contains(x)){
 					continue;
 				}
 				System.out.println(SortedInputs.get(x-1).get(0));
-				if(!blocked.containsKey(x)){
+				if(!blocked.contains(x)){
 					String z = SortedInputs.get(x-1).get(0);
 					String[] zSplit = z.split("\\s+");
 					int currentResourceID = Integer.parseInt(zSplit[1])-1;
@@ -182,14 +201,19 @@ class Bankers{
 						}
 					}
 					if(zSplit[0].equals("request")){
-						System.out.println("Requesting for "+x);
+						System.out.println("Requesting number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+" for "+x);
+						System.out.println(x+" has already claimed"+alreadyClaimed[x-1][currentResourceID]);
 						if(x==processP){
 							//Adding resources to claimed just now
 							alreadyClaimed[x-1][currentResourceID]+=currentResourceNeed;
 							//Check if the recent claim is greater than initial claim
 							if(alreadyClaimed[x-1][currentResourceID]>initialClaims[x-1][currentResourceID]){
 								System.out.println("Aborting process "+Integer.toString(x)+". Claiming more resources than initial claim.");
-
+								alreadyClaimed[x-1][currentResourceID]-=currentResourceNeed;
+								for(int q=0;q<numberOfResources;q++){
+									addResources[q]+=alreadyClaimed[x-1][q];
+									alreadyClaimed[x-1][q] = 0;
+								}
 								terminated.add(x);
 								terminating+=1;
 								/*
@@ -208,20 +232,27 @@ class Bankers{
 							if((resources[currentResourceID]-currentResourceNeed)>=safeResources[currentResourceID]){
 								//Check if resources claimed are more than initial claims
 								resources[currentResourceID]-=currentResourceNeed;
-								alreadyClaimed[x][currentResourceID]+=currentResourceNeed;
+								alreadyClaimed[x-1][currentResourceID]+=currentResourceNeed;
 								//Removing the line	
 								SortedInputs.get(x-1).remove(0);
 							}
 							else{
-								if(!blocked.containsKey(x)){
+								if(!blocked.contains(x)){
 									System.out.println("Blocking process "+x);
-									blocked.put(x,1);
+									blocked.add(x);
+									ArrayList<Integer> temp = new ArrayList<Integer>();
+									temp.add(currentResourceID);
+									temp.add(currentResourceNeed);
+									//Change the put method or change arraylist to something else
+									blockedResourceNeeds.put(temp);
 								}
 							}
 						}
 					}
 					if(zSplit[0].equals("release")){
-						System.out.println("Releasing resources for "+x);
+						System.out.println("Releasing number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+"  for "+x);
+						System.out.println(x+" has already claimed"+alreadyClaimed[x-1][currentResourceID]);
+						alreadyClaimed[x-1][currentResourceID]-=currentResourceNeed;
 						addResources[currentResourceID]+=currentResourceNeed;
 						if(x==processP){
 							//Extra if part for safeResources adding up
@@ -243,6 +274,7 @@ class Bankers{
 						}
 						for(int q=0;q<numberOfResources;q++){
 							resources[q] +=alreadyClaimed[x-1][q];
+							alreadyClaimed[x-1][q] = 0;
 						}
 						//Removing the line	
 						SortedInputs.get(x-1).remove(0);
@@ -251,7 +283,9 @@ class Bankers{
 			}
 			//Releasing the resources back to the manager at the end
 			for(int x=0;x<numberOfResources;x++){
+				System.out.println("X: "+addResources[x]);
 				resources[x] += addResources[x];
+				addResources[x] = 0;
 			}
 			if(processPReleaseResourceID!=-1){
 				safeResources[processPReleaseResourceID] += processPReleaseAmount;	
