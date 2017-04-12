@@ -98,6 +98,11 @@ class Bankers{
 			resource_status[x] = "Unstarted";
 		}
 
+
+
+		ArrayList<Integer> tempBlockedIds = new ArrayList<Integer>();
+		Map<Integer,List<Integer>> blockedResourceNeeds = new HashMap<Integer,List<Integer>>();
+
 		//Process P chosen, initialized to -1.
 		int processP = -1;
 		//Resource ID of the resource released by Process P
@@ -151,13 +156,25 @@ class Bankers{
 			//Checking if the blocked resources 
 			//Include the highest priority code according to waiting time at the end of the loop!
 			//Tech Debt => ArrayList
-			ArrayList<Integer> tempBlockedIds = new ArrayList<Integer>();
-			HashMap<Integer,ArrayList<Integer>> blockedResourceNeeds = new HashMap<Integer,ArrayList<Integer>>();
+			
+			//System.out.println("STARTING HERE!");
+			System.out.println(blocked.size());
+			if(!blocked.isEmpty()){
+				//System.out.println("LOLOLOLOLOL");
+				for(Integer x:blocked){
+					System.out.println("Blocked Resource ID:"+x);
+				}	
+			}
+			//System.out.println("ENDING HERE!");
+			
+			System.out.println("Checking blocked resources!");
 			if(!blocked.isEmpty()){
 				for(Integer key: blocked){
 					boolean status = false;
 					int rId = blockedResourceNeeds.get(key).get(0);
-					int rAmount = blockedResourceNeeds.get(key).get(0);
+					int rAmount = blockedResourceNeeds.get(key).get(1);
+					System.out.println("present resource:"+(resources[rId]));
+					System.out.println("required resource:"+rAmount);
 					if(resources[rId]>=rAmount){
 						status = true;
 					}
@@ -176,8 +193,9 @@ class Bankers{
 			for(Integer k: tempBlockedIds){
 				orderOfIds.add(k);
 			}
-			System.out.println(orderOfIds);
-			for(int x=1;x<numberOfTasks;x++){
+			tempBlockedIds = new ArrayList<Integer>();
+			System.out.println("Order of IDs: "+orderOfIds);
+			for(int x=1;x<=numberOfTasks;x++){
 				if(!orderOfIds.contains(x)){
 					orderOfIds.add(x);
 				}
@@ -202,7 +220,7 @@ class Bankers{
 					}
 					if(zSplit[0].equals("request")){
 						System.out.println("Requesting number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+" for "+x);
-						System.out.println(x+" has already claimed"+alreadyClaimed[x-1][currentResourceID]);
+						System.out.println(x+" has already claimed "+alreadyClaimed[x-1][currentResourceID]);
 						if(x==processP){
 							//Adding resources to claimed just now
 							alreadyClaimed[x-1][currentResourceID]+=currentResourceNeed;
@@ -239,19 +257,21 @@ class Bankers{
 							else{
 								if(!blocked.contains(x)){
 									System.out.println("Blocking process "+x);
+									//System.out.println("Adding to blocked!");
 									blocked.add(x);
+									//System.out.println("Added to blocked!");
 									ArrayList<Integer> temp = new ArrayList<Integer>();
 									temp.add(currentResourceID);
 									temp.add(currentResourceNeed);
 									//Change the put method or change arraylist to something else
-									blockedResourceNeeds.put(temp);
+									blockedResourceNeeds.put(x,temp);
 								}
 							}
 						}
 					}
 					if(zSplit[0].equals("release")){
 						System.out.println("Releasing number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+"  for "+x);
-						System.out.println(x+" has already claimed"+alreadyClaimed[x-1][currentResourceID]);
+						System.out.println(x+" has already claimed "+alreadyClaimed[x-1][currentResourceID]);
 						alreadyClaimed[x-1][currentResourceID]-=currentResourceNeed;
 						addResources[currentResourceID]+=currentResourceNeed;
 						if(x==processP){
