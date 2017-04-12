@@ -145,7 +145,7 @@ class Bankers{
 			System.out.println();
 		}
 		/**/
-		int timeCounter = 1;
+		int timeCounter = 0+numberOfResources;
 		int[] minimumResources = new int[numberOfResources];
 		while(terminating<numberOfTasks){
 			System.out.println("Number of terminating processes: "+terminating);
@@ -171,13 +171,20 @@ class Bankers{
 			if(!blocked.isEmpty()){
 				for(Integer key: blocked){
 					boolean status = false;
-					int rId = blockedResourceNeeds.get(key).get(0);
-					int rAmount = blockedResourceNeeds.get(key).get(1);
-					System.out.println("present resource:"+(resources[rId]));
-					System.out.println("required resource:"+rAmount);
-					if(resources[rId]>=rAmount){
-						status = true;
+					// int rId = blockedResourceNeeds.get(key).get(0);
+					// int rAmount = blockedResourceNeeds.get(key).get(1);
+					// System.out.println("present resource:"+(resources[rId]));
+					// System.out.println("required resource:"+rAmount);
+					for(int rId=0;rId<numberOfResources;rId++){
+						if(resources[rId]>=initialClaims[key-1][rId]){
+							status = true;
+						}
+						else{
+							status = false;
+							break;
+						}
 					}
+					
 					if(status==true){
 						tempBlockedIds.add(key);
 					}
@@ -193,7 +200,7 @@ class Bankers{
 			for(Integer k: tempBlockedIds){
 				orderOfIds.add(k);
 			}
-			tempBlockedIds = new ArrayList<Integer>();
+			
 			System.out.println("Order of IDs: "+orderOfIds);
 			for(int x=1;x<=numberOfTasks;x++){
 				if(!orderOfIds.contains(x)){
@@ -211,7 +218,7 @@ class Bankers{
 					String[] zSplit = z.split("\\s+");
 					int currentResourceID = Integer.parseInt(zSplit[1])-1;
 					int currentResourceNeed = Integer.parseInt(zSplit[2]);
-					if(processP==-1){
+					if(processP==-1 || tempBlockedIds.contains(x)){
 						processP = x;
 						//Copying the number of resources of each type needed to the safeResources array to calculate how much can be afforded
 						for(int q=0;q<numberOfResources;q++){
@@ -301,6 +308,9 @@ class Bankers{
 					}
 				}
 			}
+			//End of for loop OrderOfIds
+			tempBlockedIds = new ArrayList<Integer>();
+
 			//Releasing the resources back to the manager at the end
 			for(int x=0;x<numberOfResources;x++){
 				System.out.println("X: "+addResources[x]);
