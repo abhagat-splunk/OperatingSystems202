@@ -17,6 +17,18 @@ import java.util.Scanner;
 public class OptimisticManager {
 
 	
+	public static void printArray(int[] array){
+		if(array.length>0){
+			for(int x: array){
+			System.out.print(x+" ");
+		}
+		System.out.println();	
+		}
+		else{
+			System.out.println("NOTHING IN THE ARRAY!");
+		}
+	}
+
 	public static void readFromFile(ArrayList<String> Inputs, String inputFilename){
 		try{
 			File text = new File(inputFilename);
@@ -90,14 +102,18 @@ public class OptimisticManager {
 		//Blocked processes (Process ID: Waiting Time)
 		ArrayList<Integer> blocked = new ArrayList<Integer>();
 		
+		int[] WaitingTime = new int[numberOfTasks];
+
 		for(int x=0;x<numberOfResources;x++){
 			resources[x] = Integer.parseInt(inputFirstLine[x+2]);
 			resource_status[x] = "Unstarted";
 		}
 
-
-		
-
+		//TaskID: [Total Time, Waiting Time]
+		Map<Integer,ArrayList<Integer>> FinalOutput = new HashMap<Integer,ArrayList<Integer>>();
+		for(int i=0;i<numberOfTasks;i++){
+			FinalOutput.put(i,new ArrayList<Integer>());
+		}
 
 		ArrayList<Integer> tempBlockedIds = new ArrayList<Integer>();
 		ArrayList<Integer> originalBlockedIds = new ArrayList<Integer>();
@@ -144,13 +160,12 @@ public class OptimisticManager {
 		int[] minimumResources = new int[numberOfResources];
 		
 		while(terminating<numberOfTasks){
-
 			System.out.println("Number of terminating processes: "+terminating);
 			System.out.println("Time Interval: "+timeCounter+"-"+(timeCounter+1));
 			for(int x=0;x<numberOfResources;x++){
 				System.out.println("Resource ID: "+(x+1)+" Number of resources: "+resources[x]);
 			}
-
+			printArray(WaitingTime);
 
 
 			if(originalBlockedIds.size()!=0){
@@ -163,6 +178,10 @@ public class OptimisticManager {
 					System.out.println("Deadlock!");
 					int minIndex = getIndexOfMinimum(originalBlockedIds);
 					int deadlockRemoveProcess = originalBlockedIds.get(minIndex);
+					System.out.println(originalBlockedIds);
+					ArrayList<Integer> temp = FinalOutput.get(deadlockRemoveProcess-1);
+					temp.add(-1);
+					FinalOutput.put(deadlockRemoveProcess-1,temp);
 					System.out.println("Removing process "+deadlockRemoveProcess);
 					terminating+=1;
 					terminated.add(originalBlockedIds.get(minIndex));
@@ -173,12 +192,13 @@ public class OptimisticManager {
 				}	
 				int[] tempResourcesSubtracted = new int[numberOfResources];
 				for(Integer i:originalBlockedIds){
+					WaitingTime[i-1]+=1;
 					String req = SortedInputs.get(i-1).get(0);
 					String[] zSplit = req.split("\\s+");
 					int currentResourceID = Integer.parseInt(zSplit[1])-1;
 					int currentResourceNeed = Integer.parseInt(zSplit[2]);
-					System.out.println(resources[currentResourceID]);
-					System.out.println(currentResourceNeed);
+					//System.out.println(resources[currentResourceID]);
+					//System.out.println(currentResourceNeed);
 					if(resources[currentResourceID]>=currentResourceNeed){
 						resources[currentResourceID]-=currentResourceNeed;
 						tempResourcesSubtracted[currentResourceID]+=currentResourceNeed;
@@ -195,6 +215,9 @@ public class OptimisticManager {
 				}
 			}
 			if(originalBlockedIds.size()>0 && tempBlockedIds.size()==0 && (originalBlockedIds.size()+tempBlockedIds.size()==(numberOfTasks-terminating))){
+				for(Integer i:originalBlockedIds){
+					WaitingTime[i-1]-=1;
+				}
 				continue;
 			}
 			ArrayList<Integer> orderOfIds = new ArrayList<Integer>();
@@ -202,7 +225,6 @@ public class OptimisticManager {
 				orderOfIds.add(k);
 			}
 			
-			System.out.println("Order of IDs: "+orderOfIds);
 			for(int x=1;x<=numberOfTasks;x++){
 				if(!orderOfIds.contains(x)){
 					orderOfIds.add(x);
@@ -220,9 +242,16 @@ public class OptimisticManager {
 					int currentResourceID = Integer.parseInt(zSplit[1])-1;
 					int currentResourceNeed = Integer.parseInt(zSplit[2]);
 					
+					//printArray(computeCount);
+					
 					if(zSplit[0].equals("compute")){
+						if(currentResourceID==0){
+							SortedInputs.get(x-1).remove(0);
+							continue;
+						}
 						if(computeCount.containsKey(x-1)){
-							if(computeCount.get(x-1)==0){
+							if(computeCount.get(x-1)<=	0){
+								System.out.println("Compute over!");
 								SortedInputs.get(x-1).remove(0);
 								computeCount.remove(x-1);
 							}
@@ -233,13 +262,20 @@ public class OptimisticManager {
 						else{
 							computeCount.put(x-1,currentResourceID-1);
 						}
+						for(Integer key:computeCount.keySet()){
+						System.out.println(Integer.toString(key)+": "+computeCount.get(key));
 					}
+					}
+					
 
 					if(zSplit[0].equals("request")){
-					System.out.println("Requesting number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+" for "+x);
-					System.out.println(x+" has already claimed "+alreadyClaimed[x-1][currentResourceID]);
+					// System.out.println("Requesting number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+" for "+x);
+					// System.out.println(x+" has already claimed "+alreadyClaimed[x-1][currentResourceID]);
 						if(alreadyClaimed[x-1][currentResourceID]+currentResourceNeed > initialClaims[x-1][currentResourceID]){
-							System.out.println("Process claiming more than initial limit.");
+							//System.out.println("Process claiming more than initial limit.");
+							ArrayList<Integer> temp = FinalOutput.get(x-1);
+							temp.add(-1);
+							FinalOutput.put(x-1,temp);
 							SortedInputs.get(x-1).remove(0);
 							for(int i=0;i<numberOfResources;i++){
 								addResources[i]+=alreadyClaimed[x-1][i];
@@ -249,30 +285,35 @@ public class OptimisticManager {
 						}
 						else{
 							if(resources[currentResourceID]>=currentResourceNeed){
-								System.out.println("Allocating resources!");
+								//System.out.println("Allocating resources!");
 								alreadyClaimed[x-1][currentResourceID]+=currentResourceNeed;
 								resources[currentResourceID]-=currentResourceNeed;
 								SortedInputs.get(x-1).remove(0);
 							}
 							else{
-								System.out.println("Not enough resources!");
+								//System.out.println("Not enough resources!");
 								originalBlockedIds.add(x);
 							}
 						}
 					}
 					
 					if(zSplit[0].equals("release")){
-						System.out.println("Releasing number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+"  for "+x);
-						System.out.println(x+" has already claimed "+alreadyClaimed[x-1][currentResourceID]);
+						//System.out.println("Releasing number "+currentResourceNeed+" of Resource ID: "+(currentResourceID+1)+"  for "+x);
+						//System.out.println(x+" has already claimed "+alreadyClaimed[x-1][currentResourceID]);
 						alreadyClaimed[x-1][currentResourceID]-=currentResourceNeed;
 						addResources[currentResourceID]+=currentResourceNeed;
 						//Removing the line	
 						SortedInputs.get(x-1).remove(0);
 					}
 					if(zSplit[0].equals("terminate")){
-						System.out.println("Terminating "+x);
+						//System.out.println("Terminating "+x);
 						terminating+=1;
 						terminated.add(x);
+						ArrayList<Integer> temp = FinalOutput.get(x-1);
+						temp.add(WaitingTime[x-1]);
+						temp.add(timeCounter);
+						//System.out.println(temp);
+						FinalOutput.put(x-1,temp);
 						for(int i=0;i<numberOfResources;i++){
 								addResources[i]+=alreadyClaimed[x-1][i];
 						}
@@ -292,8 +333,9 @@ public class OptimisticManager {
 			timeCounter+=1;
 			System.out.println();			
 			//terminating = numberOfTasks;//Technical debt
+
 		}
 		
+			System.out.println(FinalOutput);
 	}
-
 }
