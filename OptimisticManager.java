@@ -64,7 +64,7 @@ public class OptimisticManager {
 		//Initializing scanner object
 		String inputFilename = args[0]; //args[0] will have the file name
 		ArrayList<String> Inputs = new ArrayList<String>();
-		System.out.println(inputFilename);
+		//System.out.println(inputFilename);
 		readFromFile(Inputs, inputFilename);//Reading the file function
 		
 		ArrayList<ArrayList<String>> SortedInputs = new ArrayList<ArrayList<String>>();//ArrayList for sorted inputs
@@ -147,7 +147,7 @@ public class OptimisticManager {
 		
 
 		/* Checking sortedInputs
-		*/
+		
 		for(int x=0;x<SortedInputs.size();x++){
 			System.out.println(x+1);
 			for(int y=0;y<SortedInputs.get(x).size();y++){
@@ -155,34 +155,27 @@ public class OptimisticManager {
 			}
 			System.out.println();
 		}
-		/**/
+		*/
 		int timeCounter = 0+numberOfResources;
 		int[] minimumResources = new int[numberOfResources];
 		
 		while(terminating<numberOfTasks){
-			System.out.println("Number of terminating processes: "+terminating);
-			System.out.println("Time Interval: "+timeCounter+"-"+(timeCounter+1));
-			for(int x=0;x<numberOfResources;x++){
-				System.out.println("Resource ID: "+(x+1)+" Number of resources: "+resources[x]);
-			}
-			printArray(WaitingTime);
-
-
+			
 			if(originalBlockedIds.size()!=0){
 					
 
-				System.out.println("Original blocked IDs: "+originalBlockedIds);
+				//System.out.println("Original blocked IDs: "+originalBlockedIds);
 
 
 				if(originalBlockedIds.size()==(numberOfTasks-terminating)){
-					System.out.println("Deadlock!");
+					//System.out.println("Deadlock!");
 					int minIndex = getIndexOfMinimum(originalBlockedIds);
 					int deadlockRemoveProcess = originalBlockedIds.get(minIndex);
-					System.out.println(originalBlockedIds);
+					//System.out.println(originalBlockedIds);
 					ArrayList<Integer> temp = FinalOutput.get(deadlockRemoveProcess-1);
 					temp.add(-1);
 					FinalOutput.put(deadlockRemoveProcess-1,temp);
-					System.out.println("Removing process "+deadlockRemoveProcess);
+					//System.out.println("Removing process "+deadlockRemoveProcess);
 					terminating+=1;
 					terminated.add(originalBlockedIds.get(minIndex));
 					originalBlockedIds.remove(minIndex);
@@ -208,9 +201,8 @@ public class OptimisticManager {
 				for(int i=0;i<numberOfResources;i++){
 					resources[i]+=tempResourcesSubtracted[i];
 				}
-				System.out.println("Temporary Blocked IDs:"+tempBlockedIds);
+				//System.out.println("Temporary Blocked IDs:"+tempBlockedIds);
 				for(Integer key:tempBlockedIds){
-					System.out.println("Blocked to Normal: "+key);
 					originalBlockedIds.remove(key);
 				}
 			}
@@ -236,7 +228,7 @@ public class OptimisticManager {
 					continue;
 				}
 				if(!originalBlockedIds.contains(x)){
-					System.out.println("Process "+x+": "+SortedInputs.get(x-1).get(0));
+					//System.out.println("Process "+x+": "+SortedInputs.get(x-1).get(0));
 					String z = SortedInputs.get(x-1).get(0);
 					String[] zSplit = z.split("\\s+");
 					int currentResourceID = Integer.parseInt(zSplit[1])-1;
@@ -251,7 +243,7 @@ public class OptimisticManager {
 						}
 						if(computeCount.containsKey(x-1)){
 							if(computeCount.get(x-1)<=	0){
-								System.out.println("Compute over!");
+								//System.out.println("Compute over!");
 								SortedInputs.get(x-1).remove(0);
 								computeCount.remove(x-1);
 							}
@@ -325,17 +317,31 @@ public class OptimisticManager {
 			tempBlockedIds = new ArrayList<Integer>();
 			//Releasing the resources back to the manager at the end
 			for(int x=0;x<numberOfResources;x++){
-				System.out.println("X: "+addResources[x]);
+				//System.out.println("X: "+addResources[x]);
 				resources[x] += addResources[x];
 				addResources[x] = 0;
 			}
 
 			timeCounter+=1;
-			System.out.println();			
+			//System.out.println();			
 			//terminating = numberOfTasks;//Technical debt
 
 		}
-		
-			System.out.println(FinalOutput);
+		System.out.println("\tFIFO\t");
+		int totalWaitingTime = 0, totalTime = 0, waitingTimePercent = 0;
+
+		for(int i=0;i<numberOfTasks;i++){
+			if(FinalOutput.get(i).get(0)!=-1){
+				int percent = (FinalOutput.get(i).get(0)*100)/FinalOutput.get(i).get(1);
+				totalWaitingTime+=FinalOutput.get(i).get(0);
+				totalTime+=FinalOutput.get(i).get(1);
+				System.out.print("Task "+(i+1)+"\t"+FinalOutput.get(i).get(1)+"\t"+FinalOutput.get(i).get(0)+"\t"+percent+"%\n");	
+			}else{
+				System.out.println("Task "+(i+1)+"\taborted\t");
+			}
+		}
+		waitingTimePercent = (totalWaitingTime*100)/totalTime;
+		System.out.println("total\t"+totalTime+"\t"+totalWaitingTime+"\t"+waitingTimePercent+"%");
+
 	}
 }
