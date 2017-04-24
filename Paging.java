@@ -251,8 +251,78 @@ class Paging{
 
 	public static void thirdCase(int processSize, ArrayList<Integer> randoms, int randomFileCounter, int numberOfReferencesPerProcess, int originalQuantum, int pageSize, int numberOfFrames, String replacementAlgorithm){
 		float a=0,b=0,c=0;
-		int numberOfProcesses = 4;
+		int time_counter = 1;
+		int numberOfProcesses = 4, terminating=4;	
+		int currentFrame = -1;
+		int[] startingWord = new int[numberOfProcesses];
+		int[] currentWord = new int[numberOfProcesses];
+		// int[] currentPage = new int[currentPage];
+		ArrayList<Integer> frames = new ArrayList<Integer>();
+		ArrayList<Integer> processes = new ArrayList<Integer>();
+		for(int i=1;i<=numberOfProcesses;i++){
+			startingWord[i-1] = returnFirstWord(i,processSize);
+			//System.out.println("Starting reference "+startingWord[i-1]);
+			currentWord[i-1] = startingWord[i-1];
+		}
+		int[] numberOfReferencesLeft = new int[numberOfProcesses];
+		for(int i=0;i<numberOfProcesses;i++){
+			numberOfReferencesLeft[i]=numberOfReferencesPerProcess;
+		}
+		int totalNumberOfFramesUsed = 0;
+		while(terminating>0){
+			for(int i=1;i<=numberOfProcesses;i++){
+				int quantum = originalQuantum;
+				while(quantum>0){
+					if(numberOfReferencesLeft[i-1]<=0){
+						terminating--;
+						break;
+					}
+					//System.out.println("Process calling:"+i);
+					int currentPage = currentWord[i-1]/pageSize;
+					if(frameContains(i-1,currentPage,frames,processes)>=0){
+						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes)+".");	
+						hitThePage(i-1, frames, processes,currentPage);
+					}
+					else{
+						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
+						//System.out.println("\n BEFORE Total Number of frames used: "+totalNumberOfFramesUsed);
+						if(insertPage(i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames)!=-1){
+							totalNumberOfFramesUsed+=1;
+							currentFrame+=1;
+						}
+						else{
+							if(currentFrame<0){
+								currentFrame=totalNumberOfFramesUsed;
+							}
+							System.out.println(" from frame "+(currentFrame));
+							currentFrame-=1;
+						}
+						
+						hitThePage(i-1, frames, processes, currentPage);
+					}
+					//System.out.println("Next Case: "+nextCaseChoose(randoms,randomFileCounter,a,b,c));
+					//System.out.println("Current word: "+currentWord[i-1]);
+					/*System.out.println("\n\nPrinting frames matrix");
+					for(int z=0;z<numberOfProcesses;z++){
+						for(int j=0;j<numberOfFrames;j++){
+							System.out.print(frames[z][j]+"\t");
+						}	
+						System.out.println();
+					}*/
 
+
+					int tempNextCase = nextCaseChoose(randoms,randomFileCounter,a,b,c);
+					if(tempNextCase==4){
+						randomFileCounter++;
+					}
+					currentWord[i-1] = nextWordChoose(currentWord[i-1],tempNextCase,processSize,randomFileCounter,randoms);
+					quantum--;
+					numberOfReferencesLeft[i-1]--;
+					randomFileCounter++;
+					time_counter++;
+				}
+			}
+		}
 	}
 	
 	public static void fourthCase(int processSize, ArrayList<Integer> randoms, int randomFileCounter, int numberOfReferencesPerProcess, int originalQuantum, int pageSize, int numberOfFrames, String replacementAlgorithm){
