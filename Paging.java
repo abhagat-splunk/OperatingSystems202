@@ -42,35 +42,29 @@ class Paging{
 		return -1;
 	}
 
-	public static int frameContains(int processNumber, int currentPage, int[][] frames){
-		// System.out.println("Checking for: "+currentPage);
-		// System.out.println("Process number: "+processNumber);
-		for(int i=0;i<frames[processNumber].length;i++){
-			if(frames[processNumber][i]==currentPage){
-				//System.out.println(processNumber+"Iska hain apne pass!");
-				return i;
+	public static int frameContains(int processNumber, int currentPage, ArrayList<Integer> frames, ArrayList<Integer> processes){
+		for(int i=0;i<frames.size();i++){
+			if(frames.get(i)==currentPage){
+				if(processes.get(i)==processNumber){
+				//System.out.println(processes.get(i));
+					return i;
+				}
 			}
 		}
 		return -1;
 	}
 
-	public static int insertPage(int processNumber, int currentPage, int[][] frames, String replacementAlgorithm, ArrayList<ArrayList<Integer>> pages, int totalNumberOfFramesUsed, int numberOfFrames){
-		System.out.println("Inserting!");
+	public static int insertPage(int processNumber, int currentPage, ArrayList<Integer> frames, ArrayList<Integer> processes, String replacementAlgorithm, int totalNumberOfFramesUsed, int numberOfFrames){
 		if(totalNumberOfFramesUsed<numberOfFrames){
-			for(int i=0;i<frames[processNumber].length;i++){
-				if(frames[processNumber][i]==-1){
-					//System.out.println("Storing for process: "+processNumber);
-					frames[processNumber][i]=currentPage;
-					pages.get(processNumber).add(currentPage);
-					System.out.println(", using free frame "+i+".");
-					return totalNumberOfFramesUsed+=1;
-				}
-			}	
-		}
+				frames.add(currentPage);
+				processes.add(processNumber);
+				System.out.println(", using free frame "+(frames.size()-1)+".");
+				return totalNumberOfFramesUsed+=1;
+		}	
 		System.out.print(", evicting page ");
 		switch(replacementAlgorithm){
 			case "lru":
-				int pageToBeReplaced = pages.get(processNumber).get(0);
+				/*int pageToBeReplaced = pages.get(processNumber).get(0);
 				for(int i=0;i<frames[processNumber].length;i++){
 					if(frames[processNumber][i]==pageToBeReplaced){
 						frames[processNumber][i]=currentPage;
@@ -79,7 +73,14 @@ class Paging{
 					}
 				}
 				pages.get(processNumber).remove(0);
-				pages.get(processNumber).add(currentPage);
+				pages.get(processNumber).add(currentPage);*/
+				int pageToBeReplaced = frames.get(0);
+				int processToBeReplaced = processes.get(0);
+				frames.add(currentPage);
+				processes.add(processNumber);
+				System.out.println(pageToBeReplaced+" of "+(processToBeReplaced+1)+" from frame 0");
+				frames.remove(0);
+				processes.remove(0);
 				break;
 			case "random":
 				System.out.println(" random");
@@ -92,9 +93,17 @@ class Paging{
 	}
 
 
-	public static void hitThePage(int processNumber, ArrayList<ArrayList<Integer>> pages, int currentPage){
-		pages.get(processNumber).remove(Integer.valueOf(currentPage));
-		pages.get(processNumber).add(currentPage);
+	public static void hitThePage(int processNumber, ArrayList<Integer> frames, ArrayList<Integer> processes, int currentPage){
+		for(int i=0;i<frames.size();i++){
+			if(frames.get(i)==currentPage){
+				if(processes.get(i)==processNumber){
+					frames.remove(i);
+					processes.remove(i);
+					frames.add(currentPage);
+					processes.add(processNumber);
+				}
+			}
+		}
 	}
 
 
@@ -104,26 +113,19 @@ class Paging{
 		int numberOfProcesses = 4, terminating=4;	
 		int[] startingWord = new int[numberOfProcesses];
 		int[] currentWord = new int[numberOfProcesses];
-		ArrayList<ArrayList<Integer>> pages = new ArrayList<ArrayList<Integer>>();
 		// int[] currentPage = new int[currentPage];
-		int[][] frames = new int[numberOfProcesses][numberOfFrames];
-		for(int i=0;i<numberOfProcesses;i++){
-			for(int j=0;j<numberOfFrames;j++){
-				frames[i][j]=-1;
-			}	
-		}
-		int totalNumberOfFramesUsed = 0;
+		ArrayList<Integer> frames = new ArrayList<Integer>();
+		ArrayList<Integer> processes = new ArrayList<Integer>();
 		for(int i=1;i<=numberOfProcesses;i++){
 			startingWord[i-1] = returnFirstWord(i,processSize);
 			//System.out.println("Starting reference "+startingWord[i-1]);
 			currentWord[i-1] = startingWord[i-1];
-			pages.add(new ArrayList<Integer>());
 		}
 		int[] numberOfReferencesLeft = new int[numberOfProcesses];
 		for(int i=0;i<numberOfProcesses;i++){
 			numberOfReferencesLeft[i]=numberOfReferencesPerProcess;
 		}
-
+		int totalNumberOfFramesUsed = 0;
 		while(terminating>0){
 			for(int i=1;i<=numberOfProcesses;i++){
 				int quantum = originalQuantum;
@@ -134,14 +136,18 @@ class Paging{
 					}
 					//System.out.println("Process calling:"+i);
 					int currentPage = currentWord[i-1]/pageSize;
-					if(frameContains(i-1,currentPage,frames)>=0){
-						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames)+".");	
-						hitThePage(i-1,pages,currentPage);
+					if(frameContains(i-1,currentPage,frames,processes)>=0){
+						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes)+".");	
+						hitThePage(i-1, frames, processes,currentPage);
 					}
 					else{
 						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
-						totalNumberOfFramesUsed = insertPage(i-1,currentPage,frames,replacementAlgorithm,pages,totalNumberOfFramesUsed,numberOfFrames);
-						hitThePage(i-1,pages,currentPage);
+						//System.out.println("\n BEFORE Total Number of frames used: "+totalNumberOfFramesUsed);
+						if(insertPage(i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames)!=-1){
+							totalNumberOfFramesUsed+=1;
+						}
+						
+						hitThePage(i-1, frames, processes, currentPage);
 					}
 					//System.out.println("Next Case: "+nextCaseChoose(randoms,randomFileCounter,a,b,c));
 					//System.out.println("Current word: "+currentWord[i-1]);
@@ -169,29 +175,22 @@ class Paging{
 	public static void firstCase(int processSize, ArrayList<Integer> randoms, int randomFileCounter, int numberOfReferencesPerProcess, int originalQuantum, int pageSize, int numberOfFrames, String replacementAlgorithm){
 		int time_counter = 1;
 		double a=1.0,b=0,c=0;
-		int terminating = 1, numberOfProcesses = 1;
+		int numberOfProcesses = 1, terminating=1;	
 		int[] startingWord = new int[numberOfProcesses];
 		int[] currentWord = new int[numberOfProcesses];
-		ArrayList<ArrayList<Integer>> pages = new ArrayList<ArrayList<Integer>>();
 		// int[] currentPage = new int[currentPage];
-		int totalNumberOfFramesUsed = 0;
-		int[][] frames = new int[numberOfProcesses][numberOfFrames];
-		for(int i=0;i<numberOfProcesses;i++){
-			for(int j=0;j<numberOfFrames;j++){
-				frames[i][j]=-1;
-			}	
-		}
+		ArrayList<Integer> frames = new ArrayList<Integer>();
+		ArrayList<Integer> processes = new ArrayList<Integer>();
 		for(int i=1;i<=numberOfProcesses;i++){
 			startingWord[i-1] = returnFirstWord(i,processSize);
 			//System.out.println("Starting reference "+startingWord[i-1]);
 			currentWord[i-1] = startingWord[i-1];
-			pages.add(new ArrayList<Integer>());
 		}
 		int[] numberOfReferencesLeft = new int[numberOfProcesses];
 		for(int i=0;i<numberOfProcesses;i++){
 			numberOfReferencesLeft[i]=numberOfReferencesPerProcess;
 		}
-
+		int totalNumberOfFramesUsed = 0;
 		while(terminating>0){
 			for(int i=1;i<=numberOfProcesses;i++){
 				int quantum = originalQuantum;
@@ -200,27 +199,32 @@ class Paging{
 						terminating--;
 						break;
 					}
+					//System.out.println("Process calling:"+i);
 					int currentPage = currentWord[i-1]/pageSize;
-					if(frameContains(i-1,currentPage,frames)>=0){
-						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames)+".");	
-						hitThePage(i-1,pages,currentPage);
+					if(frameContains(i-1,currentPage,frames,processes)>=0){
+						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes)+".");	
+						hitThePage(i-1, frames, processes,currentPage);
 					}
 					else{
 						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
-						totalNumberOfFramesUsed = insertPage(i-1,currentPage,frames,replacementAlgorithm,pages,totalNumberOfFramesUsed,numberOfFrames);
-						hitThePage(i-1,pages,currentPage);
+						//System.out.println("\n BEFORE Total Number of frames used: "+totalNumberOfFramesUsed);
+						if(insertPage(i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames)!=-1){
+							totalNumberOfFramesUsed+=1;
+						}
+						hitThePage(i-1, frames, processes, currentPage);
 					}
-
-
-					// System.out.println("\n\nPrinting the frames matrix");
-					// for(int i=0;i<numberOfProcesses;i++){
-					// 	for(int j=0;j<numberOfFrames;j++){
-
-					// 	}
-					// }
-
 					//System.out.println("Next Case: "+nextCaseChoose(randoms,randomFileCounter,a,b,c));
 					//System.out.println("Current word: "+currentWord[i-1]);
+					/*System.out.println("\n\nPrinting frames matrix");
+					for(int z=0;z<numberOfProcesses;z++){
+						for(int j=0;j<numberOfFrames;j++){
+							System.out.print(frames[z][j]+"\t");
+						}	
+						System.out.println();
+					}*/
+
+
+
 					currentWord[i-1] = nextWordChoose(currentWord[i-1],nextCaseChoose(randoms,randomFileCounter,a,b,c),processSize);
 					quantum--;
 					numberOfReferencesLeft[i-1]--;
@@ -229,9 +233,7 @@ class Paging{
 				}
 			}
 		}
-			
 	}
-
 
 
 	public static void thirdCase(int processSize, ArrayList<Integer> randoms, int randomFileCounter){
