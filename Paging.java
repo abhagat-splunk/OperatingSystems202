@@ -13,7 +13,7 @@ class Paging{
 		int r = randoms.get(randomFileCounter);
 		double y = r/(Integer.MAX_VALUE + 1d);
 		//System.out.println("The random number chosen was: "+r);
-		System.out.println(y);
+		//System.out.println(y);
 
 		if(y>=(a+b+c)){
 			return 4;
@@ -46,7 +46,6 @@ class Paging{
 		for(int i=0;i<frames.size();i++){
 			if(frames.get(i)==currentPage){
 				if(processes.get(i)==processNumber){
-				//System.out.println(processes.get(i));
 					return i;
 				}
 			}
@@ -62,10 +61,11 @@ class Paging{
 				return totalNumberOfFramesUsed+=1;
 		}	
 		System.out.print(", evicting page ");
+		int pageToBeReplaced,processToBeReplaced;
 		switch(replacementAlgorithm){
 			case "lru":
-				int pageToBeReplaced = frames.get(0);
-				int processToBeReplaced = processes.get(0);
+				pageToBeReplaced = frames.get(0);
+				processToBeReplaced = processes.get(0);
 				frames.add(currentPage);
 				processes.add(processNumber);
 				System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
@@ -76,7 +76,13 @@ class Paging{
 				System.out.println(" random");
 				break;
 			case "lifo":
-				System.out.println(" lifo");
+				pageToBeReplaced = frames.get(frames.size()-1);
+				processToBeReplaced = processes.get(processes.size()-1);
+				frames.remove(frames.size()-1);
+				processes.remove(processes.size()-1);
+				frames.add(currentPage);
+				processes.add(processNumber);
+				System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
 				break;
 		}
 		return -1;
@@ -129,7 +135,10 @@ class Paging{
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes)>=0){
 						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes)+".");	
-						hitThePage(i-1, frames, processes,currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
+						
 					}
 					else{
 						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
@@ -145,8 +154,9 @@ class Paging{
 							System.out.println(" from frame "+(currentFrame));
 							currentFrame-=1;
 						}
-						
-						hitThePage(i-1, frames, processes, currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
 					}
 					//System.out.println("Next Case: "+nextCaseChoose(randoms,randomFileCounter,a,b,c));
 					//System.out.println("Current word: "+currentWord[i-1]);
@@ -206,7 +216,9 @@ class Paging{
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes)>=0){
 						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes)+".");	
-						hitThePage(i-1, frames, processes,currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
 					}
 					else{
 						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
@@ -221,7 +233,9 @@ class Paging{
 							System.out.println(" from frame "+(currentFrame));
 							currentFrame-=1;
 						}
-						hitThePage(i-1, frames, processes, currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
 					}
 					//System.out.println("Next Case: "+nextCaseChoose(randoms,randomFileCounter,a,b,c));
 					//System.out.println("Current word: "+currentWord[i-1]);
@@ -281,7 +295,9 @@ class Paging{
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes)>=0){
 						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes)+".");	
-						hitThePage(i-1, frames, processes,currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
 					}
 					else{
 						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
@@ -298,7 +314,9 @@ class Paging{
 							currentFrame-=1;
 						}
 						
-						hitThePage(i-1, frames, processes, currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
 					}
 					//System.out.println("Next Case: "+nextCaseChoose(randoms,randomFileCounter,a,b,c));
 					//System.out.println("Current word: "+currentWord[i-1]);
@@ -359,7 +377,9 @@ class Paging{
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes)>=0){
 						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes)+".");	
-						hitThePage(i-1, frames, processes,currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
 					}
 					else{
 						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
@@ -375,8 +395,9 @@ class Paging{
 							System.out.println(" from frame "+(currentFrame));
 							currentFrame-=1;
 						}
-						
-						hitThePage(i-1, frames, processes, currentPage);
+						if(replacementAlgorithm.equals("lru")){
+							hitThePage(i-1, frames, processes,currentPage);	
+						}
 					}
 					//System.out.println("Next Case: "+nextCaseChoose(randoms,randomFileCounter,a,b,c));
 					//System.out.println("Current word: "+currentWord[i-1]);
@@ -401,10 +422,6 @@ class Paging{
 				}
 			}
 		}
-
-	}
-
-	public static void readFromRandomFile(){
 
 	}
 
