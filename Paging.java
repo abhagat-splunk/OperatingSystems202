@@ -12,8 +12,6 @@ class Paging{
 	public static int nextCaseChoose(ArrayList<Integer> randoms, int randomFileCounter, double a, double b, double c){
 		int r = randoms.get(randomFileCounter);
 		double y = r/(Integer.MAX_VALUE + 1d);
-		//System.out.println("The random number chosen was: "+r);
-		//System.out.println(y);
 
 		if(y>=(a+b+c)){
 			return 4;
@@ -66,80 +64,158 @@ class Paging{
 		return -1;
 	}
 
-	public static int insertPage(int processNumber, int currentPage, ArrayList<Integer> frames, ArrayList<Integer> processes, String replacementAlgorithm, int totalNumberOfFramesUsed, int numberOfFrames, ArrayList<Integer> randoms, int randomFileCounter, ArrayList<Integer> LRUQueueFrames, ArrayList<Integer> LRUQueueProcesses){
+	public static int insertPage(int time_counter, int processNumber, int currentPage, ArrayList<Integer> frames, ArrayList<Integer> processes, String replacementAlgorithm, int totalNumberOfFramesUsed, int numberOfFrames, ArrayList<Integer> randoms, int randomFileCounter, ArrayList<Integer> LRUQueueFrames, ArrayList<Integer> LRUQueueProcesses, ArrayList<Integer> LRUQueueTimes,int[] numberOfEvictions, ArrayList<Integer> loadingTimes, int[] runningSums){
 		if(totalNumberOfFramesUsed<numberOfFrames){
 				frames.add(0,currentPage);
 				//System.out.print("Adding frame "+currentPage);
 				processes.add(0,processNumber);
+				loadingTimes.add(0,time_counter);
 				if(replacementAlgorithm.equals("lru")){
 					LRUQueueFrames.add(currentPage);
 					LRUQueueProcesses.add(processNumber);
+					LRUQueueTimes.add(time_counter);
 				}
 				//System.out.println("to process: "+processNumber);
 				//System.out.println("Frames: "+frames);
 				//System.out.println("Processes: "+processes);
-				System.out.println(", using free frame "+(numberOfFrames-totalNumberOfFramesUsed-1)+".");
+				
+
+				//System.out.println(", using free frame "+(numberOfFrames-totalNumberOfFramesUsed-1)+".");
 				return totalNumberOfFramesUsed+=1;
 		}	
-		System.out.print(", evicting page ");
-		int pageToBeReplaced,processToBeReplaced;
+		//System.out.print(", evicting page ");
+		int pageToBeReplaced,processToBeReplaced,timeToBeAdded;
 		switch(replacementAlgorithm){
 			case "lru":
 				pageToBeReplaced = LRUQueueFrames.get(0);
 				processToBeReplaced = LRUQueueProcesses.get(0);
-				System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
+				timeToBeAdded = time_counter-LRUQueueTimes.get(0);
+				
+				//System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
 				
 				int tempIndex = frameContainsPage(processToBeReplaced,pageToBeReplaced,frames,processes);
 				//System.out.println("AT INDEX: "+tempIndex);
 				LRUQueueFrames.remove(0);
 				LRUQueueProcesses.remove(0);
+				LRUQueueTimes.remove(0);
+				
 				frames.remove(tempIndex);
 				processes.remove(tempIndex);
+				loadingTimes.remove(tempIndex);
+				
 				frames.add(tempIndex,currentPage);
 				processes.add(tempIndex,processNumber);
+				loadingTimes.add(tempIndex,time_counter);
+				
 				LRUQueueFrames.add(currentPage);
 				LRUQueueProcesses.add(processNumber);
+				LRUQueueTimes.add(time_counter);
+
+				numberOfEvictions[processToBeReplaced]+=1;
+				runningSums[processToBeReplaced]+=timeToBeAdded;
 				break;
 			case "random":
 				int tempRandomNumber = randoms.get(randomFileCounter);
 				//System.out.println("Random Number: "+tempRandomNumber);
 				int tempFrameNumber = tempRandomNumber%numberOfFrames;
+				
 				pageToBeReplaced = frames.get(tempFrameNumber);
 				processToBeReplaced = processes.get(tempFrameNumber);
-				System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
+				timeToBeAdded = time_counter-loadingTimes.get(tempFrameNumber);
+				
+				//System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
+				
 				frames.remove(tempFrameNumber);
 				processes.remove(tempFrameNumber);
+				loadingTimes.remove(tempFrameNumber);
+
 				frames.add(tempFrameNumber,currentPage);
 				processes.add(tempFrameNumber,processNumber);
+				loadingTimes.add(tempFrameNumber,time_counter);
+
+				numberOfEvictions[processToBeReplaced]+=1;
+				runningSums[processToBeReplaced]+=timeToBeAdded;
 				break;
 			case "lifo":
 				pageToBeReplaced = frames.get(0);
 				processToBeReplaced = processes.get(0);
+				timeToBeAdded = time_counter-loadingTimes.get(0);
+
 				frames.remove(0);
 				processes.remove(0);
+				loadingTimes.remove(0);
+
 				frames.add(0,currentPage);
 				processes.add(0,processNumber);
-				System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
+				loadingTimes.add(0,time_counter);
+
+				//System.out.print(pageToBeReplaced+" of "+(processToBeReplaced+1));
+				numberOfEvictions[processToBeReplaced]+=1;
+				runningSums[processToBeReplaced]+=timeToBeAdded;
 				break;
 		}
 		return -1;
 	}
 
 
-	public static void hitThePage(int processNumber, ArrayList<Integer> LRUQueueFrames, ArrayList<Integer> LRUQueueProcesses, int currentPage){
+	public static void hitThePage(int processNumber, ArrayList<Integer> LRUQueueFrames, ArrayList<Integer> LRUQueueProcesses, ArrayList<Integer> LRUQueueTimes, int currentPage){
 		int tempIndex = frameContainsPage(processNumber,currentPage,LRUQueueFrames,LRUQueueProcesses);
 		LRUQueueFrames.remove(tempIndex);
 		LRUQueueProcesses.remove(tempIndex);
+		int time = LRUQueueTimes.get(tempIndex);
+		LRUQueueTimes.remove(tempIndex);
+
 		LRUQueueFrames.add(currentPage);
 		LRUQueueProcesses.add(processNumber);
+		LRUQueueTimes.add(time);
 	}
 
 
-	public static void printFramesAndProcesses(ArrayList<Integer> frames, ArrayList<Integer> processes, ArrayList<Integer> LRUQueueFrames, ArrayList<Integer> LRUQueueProcesses){
+	public static void printFramesAndProcesses(ArrayList<Integer> frames, ArrayList<Integer> processes, ArrayList<Integer> loadingTimes, ArrayList<Integer> LRUQueueFrames, ArrayList<Integer> LRUQueueProcesses, ArrayList<Integer> LRUQueueTimes, int[] runningSums){
 		System.out.println("\nFrames:    "+frames);
 		System.out.println("\nProcesses: "+processes);
+		System.out.println("\nTimes: "+loadingTimes);
+		
 		System.out.println("\nLRU Frames:    "+LRUQueueFrames);
 		System.out.println("\nLRU Processes: "+LRUQueueProcesses);
+		System.out.println("\nLRU Times: "+LRUQueueTimes);
+
+		System.out.print("Running sums: ");
+		for(int x=0;x<runningSums.length;x++){
+			System.out.println("Process: "+(x+1)+" has "+runningSums[x]);
+		}
+		System.out.println();
+	}
+
+
+	public static void printOutput(int numberOfProcesses, int[] runningSums, int[] numberOfEvictions,int[] numberOfFaults){
+		System.out.println();
+		int totalNumberOfFaults = 0;
+		int totalRunningSum = 0;
+		int totalNumberOfEvictions = 0;
+		for(int x=0;x<numberOfProcesses;x++){
+			totalNumberOfFaults+=numberOfFaults[x];
+			if(numberOfEvictions[x]>0){
+				totalNumberOfEvictions+=numberOfEvictions[x];
+				totalRunningSum+=runningSums[x];
+				double temp = (double) (runningSums[x])/numberOfEvictions[x];
+				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+" faults and "+temp+" average residency.");	
+			}
+			else{
+				System.out.println("Process "+(x+1)+" had "+numberOfFaults[x]+" faults.");
+				System.out.println("\tWith no evictions, the average residence is undefined.");
+			}
+		}
+		System.out.println();
+		if(totalNumberOfEvictions==0){	
+			System.out.println("The total number of faults is "+totalNumberOfFaults);
+			System.out.println("\tWith no evictions, the overall average residence is undefined.");
+		}
+		else{
+			double avReTi = (double) totalRunningSum/totalNumberOfEvictions;
+		System.out.println("The total number of faults is "+totalNumberOfFaults+" and the overall average residency is "+avReTi+".");	
+		}
+		
 	}
 
 	public static void secondCase(int processSize, ArrayList<Integer> randoms, int randomFileCounter, int numberOfReferencesPerProcess, int originalQuantum, int pageSize, int numberOfFrames, String replacementAlgorithm){
@@ -151,14 +227,19 @@ class Paging{
 		int[] currentWord = new int[numberOfProcesses];
 		int[] numberOfEvictions = new int[numberOfProcesses];
 		int[] runningSums = new int[numberOfProcesses];
+
+		for(int x=0;x<numberOfProcesses;x++){
+			runningSums[x]=0;
+		}
 		int[] numberOfFaults = new int[numberOfProcesses];
 
 		ArrayList<Integer> LRUQueueFrames = new ArrayList<Integer>();
 		ArrayList<Integer> LRUQueueProcesses = new ArrayList<Integer>();
-		
+		ArrayList<Integer> LRUQueueTimes = new ArrayList<Integer>();
 		// int[] currentPage = new int[currentPage];
 		ArrayList<Integer> frames = new ArrayList<Integer>();
 		ArrayList<Integer> processes = new ArrayList<Integer>();
+		ArrayList<Integer> loadingTimes = new ArrayList<Integer>();
 		for(int i=1;i<=numberOfProcesses;i++){
 			startingWord[i-1] = returnFirstWord(i,processSize);
 			//System.out.println("Starting reference "+startingWord[i-1]);
@@ -174,6 +255,8 @@ class Paging{
 				int quantum = originalQuantum;
 				//printFramesAndProcesses(frames,processes,LRUQueueFrames,LRUQueueProcesses);
 				while(quantum>0){
+					//printFramesAndProcesses(frames,processes,loadingTimes,LRUQueueFrames,LRUQueueProcesses, LRUQueueTimes,runningSums);
+					
 					//System.out.println("\n\nPrinting randomFileCounter: "+randomFileCounter+"\n\n");
 					if(numberOfReferencesLeft[i-1]<=0){
 						terminating--;
@@ -182,30 +265,35 @@ class Paging{
 					//System.out.println("Process calling:"+i);
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes,numberOfFrames)>=0){
-						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
+						//System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
 						if(replacementAlgorithm.equals("lru")){
-							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses,currentPage);	
+							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses, LRUQueueTimes, currentPage);	
 						}
 						
 					}
 					else{
-						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
+						//runningSums[i-1]-=1;		
+						
+						//System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
+						
+
 						//System.out.println("\n BEFORE Total Number of frames used: "+totalNumberOfFramesUsed);
 						numberOfFaults[i-1]+=1;
-						if(insertPage(i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses)!=-1){
+						if(insertPage(time_counter,i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses,LRUQueueTimes,numberOfEvictions,loadingTimes,runningSums)!=-1){
 							totalNumberOfFramesUsed+=1;
 							currentFrame+=1;
+							// /runningSums[i-1]-=1;
 						}
 						else{
 							if(currentFrame<0){
 								currentFrame=totalNumberOfFramesUsed;
 							}
-							System.out.println(" from frame "+(numberOfFrames-currentFrame));
+							//System.out.println(" from frame "+(numberOfFrames-currentFrame));
 							currentFrame-=1;
 							if(replacementAlgorithm.equals("random")){
 								randomFileCounter+=1;
 							}
-							numberOfEvictions[i-1]+=1;
+
 						}
 						//if(replacementAlgorithm.equals("lru")){
 						//	LRUQueueFrames.add(currentPage);
@@ -222,21 +310,10 @@ class Paging{
 					numberOfReferencesLeft[i-1]--;
 					randomFileCounter++;
 					time_counter++;
-					for(int q=0;q<processes.size();q++){
-						runningSums[processes.get(q)]+=1;
-					}
 				}
 			}
 		}
-		for(int x=0;x<numberOfProcesses;x++){
-			if(numberOfEvictions[x]>0){
-				double temp = (double) (runningSums[x])/numberOfEvictions[x];
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+" faults and "+temp+" average residency");	
-			}
-			else{
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+".");
-			}
-		}
+		printOutput(numberOfProcesses,runningSums,numberOfEvictions,numberOfFaults);
 	}
 	
 
@@ -253,9 +330,10 @@ class Paging{
 		int [] numberOfFaults = new int[numberOfProcesses];
 		ArrayList<Integer> LRUQueueFrames = new ArrayList<Integer>();
 		ArrayList<Integer> LRUQueueProcesses = new ArrayList<Integer>();
-
+		ArrayList<Integer> LRUQueueTimes = new ArrayList<Integer>();
 		ArrayList<Integer> frames = new ArrayList<Integer>();
 		ArrayList<Integer> processes = new ArrayList<Integer>();
+		ArrayList<Integer> loadingTimes = new ArrayList<Integer>();
 		for(int i=1;i<=numberOfProcesses;i++){
 			startingWord[i-1] = returnFirstWord(i,processSize);
 			//System.out.println("Starting reference "+startingWord[i-1]);
@@ -270,7 +348,7 @@ class Paging{
 			for(int i=1;i<=numberOfProcesses;i++){
 				int quantum = originalQuantum;
 				while(quantum>0){
-					//printFramesAndProcesses(frames,processes,LRUQueueFrames,LRUQueueProcesses);
+					//printFramesAndProcesses(frames,processes,loadingTimes,LRUQueueFrames,LRUQueueProcesses,LRUQueueTimes,runningSums);
 					if(numberOfReferencesLeft[i-1]<=0){
 						terminating--;
 						break;
@@ -278,29 +356,28 @@ class Paging{
 					//System.out.println("Process calling:"+i);
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes,numberOfFrames)>=0){
-						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
+						//System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
 						if(replacementAlgorithm.equals("lru")){
 							//System.out.println("Hitting the page!");
-							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses,currentPage);	
+							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses, LRUQueueTimes,currentPage);	
 						}
 					}
 					else{
-						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
+						//System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
 						//System.out.println("\n BEFORE Total Number of frames used: "+totalNumberOfFramesUsed);
 						numberOfFaults[i-1]+=1;
-						if(insertPage(i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses)!=-1){
+						if(insertPage(time_counter, i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses, LRUQueueTimes,numberOfEvictions, loadingTimes, runningSums)!=-1){
 							totalNumberOfFramesUsed+=1;
 						}
 						else{
 							if(currentFrame<0){
 								currentFrame=totalNumberOfFramesUsed;
 							}
-							System.out.println(" from frame "+(numberOfFrames-currentFrame));
+							//System.out.println(" from frame "+(numberOfFrames-currentFrame));
 							currentFrame-=1;
 							if(replacementAlgorithm.equals("random")){
 								randomFileCounter+=1;
 							}	
-							numberOfEvictions[i-1]+=1;
 						}
 						//if(replacementAlgorithm.equals("lru")){
 							//hitThePage(i-1, frames, processes,currentPage);	
@@ -316,23 +393,13 @@ class Paging{
 					numberOfReferencesLeft[i-1]--;
 					randomFileCounter++;
 					time_counter++;
-					for(int q=0;q<processes.size();q++){
-						runningSums[processes.get(q)]+=1;
-					}
+					
 					//System.out.println("\n\nEND");
 					//printFramesAndProcesses(frames,processes,LRUQueueFrames,LRUQueueProcesses);
 				}
 			}
 		}
-		for(int x=0;x<numberOfProcesses;x++){
-			if(numberOfEvictions[x]>0){
-				double temp = (double) (runningSums[x]-numberOfEvictions[x])/numberOfEvictions[x];
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+" faults and "+temp+" average residency");	
-			}
-			else{
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+".");
-			}
-		}
+		printOutput(numberOfProcesses,runningSums,numberOfEvictions,numberOfFaults);
 	}
 
 
@@ -350,9 +417,12 @@ class Paging{
 
 		ArrayList<Integer> LRUQueueFrames = new ArrayList<Integer>();
 		ArrayList<Integer> LRUQueueProcesses = new ArrayList<Integer>();
+		ArrayList<Integer> LRUQueueTimes = new ArrayList<Integer>();
 
 		ArrayList<Integer> frames = new ArrayList<Integer>();
 		ArrayList<Integer> processes = new ArrayList<Integer>();
+		ArrayList<Integer> loadingTimes = new ArrayList<Integer>();
+
 		for(int i=1;i<=numberOfProcesses;i++){
 			startingWord[i-1] = returnFirstWord(i,processSize);
 			//System.out.println("Starting reference "+startingWord[i-1]);
@@ -372,19 +442,21 @@ class Paging{
 						terminating--;
 						break;
 					}
+					//printFramesAndProcesses(frames,processes,loadingTimes,LRUQueueFrames,LRUQueueProcesses,LRUQueueTimes,runningSums);
+				
 					//System.out.println("Process calling:"+i);
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes,numberOfFrames)>=0){
-						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
+						//System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
 						if(replacementAlgorithm.equals("lru")){
-							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses,currentPage);	
+							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses,LRUQueueTimes,currentPage);	
 						}
 					}
 					else{
-						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
+						//System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
 						//System.out.println("\n BEFORE Total Number of frames used: "+totalNumberOfFramesUsed);
 						numberOfFaults[i-1]+=1;
-						if(insertPage(i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses)!=-1){
+						if(insertPage(time_counter,i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses, LRUQueueTimes,numberOfEvictions, loadingTimes, runningSums)!=-1){
 							totalNumberOfFramesUsed+=1;
 							currentFrame+=1;
 						}
@@ -392,12 +464,11 @@ class Paging{
 							if(currentFrame<0){
 								currentFrame=totalNumberOfFramesUsed;
 							}
-							System.out.println(" from frame "+(currentFrame));
+							//System.out.println(" from frame "+(currentFrame));
 							currentFrame-=1;
 							if(replacementAlgorithm.equals("random")){
 								randomFileCounter+=1;
 							}
-							numberOfEvictions[i-1]+=1;
 						}
 						
 						//if(replacementAlgorithm.equals("lru")){
@@ -414,21 +485,10 @@ class Paging{
 					numberOfReferencesLeft[i-1]--;
 					randomFileCounter++;
 					time_counter++;
-					for(int q=0;q<processes.size();q++){
-						runningSums[processes.get(q)]+=1;
-					}
 				}
 			}
 		}
-		for(int x=0;x<numberOfProcesses;x++){
-			if(numberOfEvictions[x]>0){
-				double temp = (double) (runningSums[x]-numberOfEvictions[x])/numberOfEvictions[x];
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+" faults and "+temp+" average residency");	
-			}
-			else{
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+".");
-			}
-		}
+		printOutput(numberOfProcesses,runningSums,numberOfEvictions,numberOfFaults);
 	}
 	
 	public static void fourthCase(int processSize, ArrayList<Integer> randoms, int randomFileCounter, int numberOfReferencesPerProcess, int originalQuantum, int pageSize, int numberOfFrames, String replacementAlgorithm){
@@ -446,10 +506,12 @@ class Paging{
 		int[] runningSums = new int[numberOfProcesses];
 		ArrayList<Integer> LRUQueueFrames = new ArrayList<Integer>();
 		ArrayList<Integer> LRUQueueProcesses = new ArrayList<Integer>();
-
+		ArrayList<Integer> LRUQueueTimes = new ArrayList<Integer>();
 
 		ArrayList<Integer> frames = new ArrayList<Integer>();
 		ArrayList<Integer> processes = new ArrayList<Integer>();
+		ArrayList<Integer> loadingTimes = new ArrayList<Integer>();
+
 		for(int i=1;i<=numberOfProcesses;i++){
 			startingWord[i-1] = returnFirstWord(i,processSize);
 			//System.out.println("Starting reference "+startingWord[i-1]);
@@ -469,19 +531,21 @@ class Paging{
 						terminating--;
 						break;
 					}
+					//printFramesAndProcesses(frames,processes,loadingTimes,LRUQueueFrames,LRUQueueProcesses,LRUQueueTimes,runningSums);
+				
 					//System.out.println("Process calling:"+i);
 					int currentPage = currentWord[i-1]/pageSize;
 					if(frameContains(i-1,currentPage,frames,processes,numberOfFrames)>=0){
-						System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
+						//System.out.println(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Hit in frame "+frameContains(i-1,currentPage,frames,processes,numberOfFrames)+".");	
 						if(replacementAlgorithm.equals("lru")){
-							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses,currentPage);	
+							hitThePage(i-1, LRUQueueFrames, LRUQueueProcesses, LRUQueueTimes,currentPage);	
 						}
 					}
 					else{
-						System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
+						//System.out.print(i+" references word "+currentWord[i-1]+" (page "+currentPage+") at time "+time_counter+": Fault");
 						//System.out.println("\n BEFORE Total Number of frames used: "+totalNumberOfFramesUsed);
 						numberOfFaults[i-1]+=1;
-						if(insertPage(i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses)!=-1){
+						if(insertPage(time_counter, i-1,currentPage,frames,processes,replacementAlgorithm,totalNumberOfFramesUsed,numberOfFrames,randoms,randomFileCounter,LRUQueueFrames,LRUQueueProcesses,LRUQueueTimes,numberOfEvictions, loadingTimes, runningSums)!=-1){
 							totalNumberOfFramesUsed+=1;
 							currentFrame+=1;
 						}
@@ -489,12 +553,11 @@ class Paging{
 							if(currentFrame<0){
 								currentFrame=totalNumberOfFramesUsed;
 							}
-							System.out.println(" from frame "+(currentFrame));
+							//System.out.println(" from frame "+(currentFrame));
 							currentFrame-=1;
 							if(replacementAlgorithm.equals("random")){
 								randomFileCounter+=1;
 							}
-							numberOfEvictions[i-1]+=1;
 						}
 						//if(replacementAlgorithm.equals("lru")){
 						//	hitThePage(i-1, frames, processes,currentPage);	
@@ -511,21 +574,11 @@ class Paging{
 					numberOfReferencesLeft[i-1]--;
 					randomFileCounter++;
 					time_counter++;
-					for(int q=0;q<processes.size();q++){
-						runningSums[processes.get(q)]+=1;
-					}
+					
 				}
 			}
 		}
-		for(int x=0;x<numberOfProcesses;x++){
-			if(numberOfEvictions[x]>0){
-				double temp = (double) (runningSums[x]-numberOfEvictions[x])/numberOfEvictions[x];
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+" faults and "+temp+" average residency");	
-			}
-			else{
-				System.out.println("Process "+(x+1)+" has "+numberOfFaults[x]+".");
-			}
-		}
+		printOutput(numberOfProcesses,runningSums,numberOfEvictions,numberOfFaults);
 	}
 
 	public static ArrayList<Integer> readRandomFile(String inputFilename){
@@ -564,7 +617,7 @@ class Paging{
 			System.out.println("Next word referenced:"+returnFirstWord(i+1,processSize));
 		}*/
 		int numberOfFrames = machineSize/pageSize;
-		System.out.println("Number of frames: "+numberOfFrames);
+		//System.out.println("Number of frames: "+numberOfFrames);
 		switch(jobMixNumber){
 			case 1:
 				firstCase(processSize, randoms, randomFileCounter, numberOfReferencesPerProcess, quantum, pageSize, numberOfFrames, replacementAlgorithm);
